@@ -82,8 +82,7 @@ func (project *Project) GetFilesToRemove(allFiles []File, referenceDate time.Tim
 	filesToKeep := map[string]bool{}
 	for _, rs := range project.State {
 
-		filesByExpDateDesc := SelectedFilesByExpirationAsc(rs.Files)
-		filesByExpDateDesc.Reverse()
+		filesByExpDateDesc := SelectedFilesSortedByExpirationDateDesc(rs.Files)
 
 		fileKeptCount := 0
 		for _, f := range filesByExpDateDesc {
@@ -96,6 +95,9 @@ func (project *Project) GetFilesToRemove(allFiles []File, referenceDate time.Tim
 			// 	fileKeptCount++
 			// }
 			fmt.Printf("%v: (fileKeptCount(%v) < rs.Rule.Count(%v) || maxExp(%v).After(%v))  && CanKeepFileForError(%v)\n", f.Path, fileKeptCount, rs.Rule.Count, maxExpiration, referenceDate, CanKeepFileForError(f.Error))
+
+			// TODO: vérifier si 'CanKeepFileForError' est nécessaire dans le if
+			// => on veut garder les fichiers trop petits, mais pas qu'ils comptent dans les backups valables
 			if (fileKeptCount < rs.Rule.Count || maxExpiration.After(referenceDate)) && CanKeepFileForError(f.Error) {
 				filesToKeep[f.Path] = true
 
@@ -188,7 +190,16 @@ func (p *Project) DebugPrint() {
 	for id, rs := range p.State {
 		fmt.Printf(" - %v\n", id)
 		for _, f := range rs.Files {
-			fmt.Printf("   %v [%v]\n", f.Path, f.Expiration)
+			errState := "✅"
+			if err, ok := f.Error.(*RuleStateError); ok {
+				switch err.Reason {
+				case RuleStateErrorSizeTooSmall:
+					errState = "⚠️ too small"
+				case RuleStateErrorObsolete:
+					errState = "🆘 obsolete"
+				}
+			}
+			fmt.Printf("   %v [%v] %v\n", f.Path, f.Expiration, errState)
 		}
 	}
 	fmt.Println("")
@@ -237,6 +248,8 @@ func (rs *RuleState) Keep(file File, someError error) error {
 	for _, f := range rs.Files {
 		filesByName[f.Path] = f
 	}
+
+	fmt.Printf("file error: %+v", someError)
 
 	// check if the file is not already kept
 	if existingFile, ok := filesByName[file.Path]; !ok {
@@ -307,12 +320,12 @@ func (e *RuleStateError) Error() string {
 }
 
 func CanKeepFileForError(err error) bool {
-	if err, ok := err.(*RuleStateError); ok {
-		switch err.Reason {
-		case RuleStateErrorSizeTooSmall:
-			return false
-		}
-	}
+	// if err, ok := err.(*RuleStateError); ok {
+	// 	switch err.Reason {
+	// 	case RuleStateErrorSizeTooSmall:
+	// 		return false
+	// 	}
+	// }
 	return true
 }
 
@@ -341,47 +354,59 @@ type File struct {
 // FilesByFolder represents
 type FilesByFolder map[string][]File
 
-// FilesByDateAsc stores a slice of files, which should be sorted by date,
-// from older to earlier
-type FilesByDateAsc []File
+// FilesSortedByDateAsc returns a slice of files,
+// sorted by date from older to earlier
+func FilesSortedByDateAsc(files []File) []File {
+	f := make([]File, len(files))
+	copy(f, files)
 
-func (files FilesByDateAsc) Len() int {
+	sorted := sortedFilesByDate(f)
+	sort.Sort(sorted)
+
+	return sorted
+}
+
+// FilesSortedByDateDesc returns a slice of files,
+// sorted by date from earlier to older
+func FilesSortedByDateDesc(files []File) []File {
+	f := make([]File, len(files))
+	copy(f, files)
+
+	sorted := sortedFilesByDate(f)
+	sort.Sort(sort.Reverse(sorted))
+
+	return sorted
+}
+
+type sortedFilesByDate []File
+
+func (files sortedFilesByDate) Len() int {
 	return len(files)
 }
-func (files FilesByDateAsc) Less(i, j int) bool {
+func (files sortedFilesByDate) Less(i, j int) bool {
 	return files[i].Date.Before(files[j].Date)
 }
-func (files FilesByDateAsc) Swap(i, j int) {
+func (files sortedFilesByDate) Swap(i, j int) {
 	files[i], files[j] = files[j], files[i]
 }
 
-// Sort sorts the files by date (asc)
-func (files FilesByDateAsc) Sort() {
-	sort.Sort(files)
-}
+// // Latest returns the most recent file from the list
+// func (files FilesByDateAsc) Latest() File {
+// 	// sort the backups by desc
+// 	files.Reverse()
 
-// Sort sorts the files by date (asc)
-func (files FilesByDateAsc) Reverse() {
-	sort.Sort(sort.Reverse(files))
-}
+// 	now := time.Now()
+// 	for _, f := range files {
+// 		if f.Date.After(now) {
+// 			continue
+// 		}
+// 		return f
+// 	}
 
-// Latest returns the most recent file from the list
-func (files FilesByDateAsc) Latest() File {
-	// sort the backups by desc
-	files.Reverse()
-
-	now := time.Now()
-	for _, f := range files {
-		if f.Date.After(now) {
-			continue
-		}
-		return f
-	}
-
-	// return the latest element
-	s := []File(files)
-	return s[len(s)-1]
-}
+// 	// return the latest element
+// 	s := []File(files)
+// 	return s[len(s)-1]
+// }
 
 type SelectedFile struct {
 	File
@@ -389,35 +414,37 @@ type SelectedFile struct {
 	Error      error
 }
 
-// FilesByDateAsc stores a slice of files, which should be sorted by date,
-// from older to earlier
-type SelectedFilesByExpirationAsc []SelectedFile
+// SelectedFilesByExpirationDateDesc stores a slice of files (associated to a rule state),
+// which should be sorted by expiration date, from older to earlier
+type SelectedFilesByExpirationDateDesc []SelectedFile
 
-func (files SelectedFilesByExpirationAsc) Len() int {
+func SelectedFilesSortedByExpirationDateDesc(files []SelectedFile) SelectedFilesByExpirationDateDesc {
+	f := make([]SelectedFile, len(files))
+	copy(f, files)
+
+	sorted := selectedFilesByExpirationDate(f)
+	sort.Sort(sort.Reverse(sorted))
+
+	return SelectedFilesByExpirationDateDesc(sorted)
+}
+
+type selectedFilesByExpirationDate []SelectedFile
+
+func (files selectedFilesByExpirationDate) Len() int {
 	return len(files)
 }
-func (files SelectedFilesByExpirationAsc) Less(i, j int) bool {
+func (files selectedFilesByExpirationDate) Less(i, j int) bool {
 	return files[i].Expiration.Before(files[j].Expiration)
 }
-func (files SelectedFilesByExpirationAsc) Swap(i, j int) {
+func (files selectedFilesByExpirationDate) Swap(i, j int) {
 	files[i], files[j] = files[j], files[i]
 }
 
-// Sort sorts the files by date (asc)
-func (files SelectedFilesByExpirationAsc) Sort() {
-	sort.Sort(files)
-}
-
-// Sort sorts the files by date (asc)
-func (files SelectedFilesByExpirationAsc) Reverse() {
-	sort.Sort(sort.Reverse(files))
-}
-
-// Latest returns the most recent file from the list
-func (files SelectedFilesByExpirationAsc) Latest() SelectedFile {
-	// sort the backups
-	files.Sort()
-	// return the latest element
-	s := []SelectedFile(files)
-	return s[len(s)-1]
-}
+// // Latest returns the most recent file from the list
+// func (files SelectedFilesByExpirationAsc) Latest() SelectedFile {
+// 	// sort the backups
+// 	files.Sort()
+// 	// return the latest element
+// 	s := []SelectedFile(files)
+// 	return s[len(s)-1]
+// }
