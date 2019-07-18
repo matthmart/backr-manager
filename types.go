@@ -6,16 +6,18 @@ import (
 	"time"
 )
 
+type ProjectState map[RuleID]RuleState
+
 // Project represents a configured project in the manager
 type Project struct {
 	Name  string
 	Rules []Rule
-	State map[RuleID]RuleState
+	State ProjectState
 }
 
 func (project *Project) UpdateState(ruleID RuleID, state RuleState) error {
 	if project.State == nil {
-		project.State = map[RuleID]RuleState{}
+		project.State = ProjectState{}
 	}
 
 	project.State[ruleID] = state
@@ -62,84 +64,6 @@ func (project *Project) UpdateState(ruleID RuleID, state RuleState) error {
 
 // 	// return filesToRemove
 // }
-
-func (project *Project) GetFilesToRemove(allFiles []File, referenceDate time.Time) []File {
-
-	filesMaxExpiration := map[string]time.Time{}
-	for _, rs := range project.State {
-
-		for _, f := range rs.Files {
-			if expiration, ok := filesMaxExpiration[f.Path]; ok {
-				if f.Expiration.Before(expiration) {
-					continue
-				}
-			}
-
-			filesMaxExpiration[f.Path] = f.Expiration
-		}
-	}
-
-	filesToKeep := map[string]bool{}
-	for _, rs := range project.State {
-
-		filesByExpDateDesc := SelectedFilesSortedByExpirationDateDesc(rs.Files)
-
-		fileKeptCount := 0
-		for _, f := range filesByExpDateDesc {
-
-			maxExpiration := filesMaxExpiration[f.Path]
-			// if maxExpiration.Before(now) && fileKeptCount > rs.Rule.Count {
-			// 	filesToKeep[f.Path] = false
-			// } else {
-			// 	filesToKeep[f.Path] = true
-			// 	fileKeptCount++
-			// }
-			fmt.Printf("%v: (fileKeptCount(%v) < rs.Rule.Count(%v) || maxExp(%v).After(%v))  && CanKeepFileForError(%v)\n", f.Path, fileKeptCount, rs.Rule.Count, maxExpiration, referenceDate, CanKeepFileForError(f.Error))
-
-			// TODO: vérifier si 'CanKeepFileForError' est nécessaire dans le if
-			// => on veut garder les fichiers trop petits, mais pas qu'ils comptent dans les backups valables
-			if (fileKeptCount < rs.Rule.Count || maxExpiration.After(referenceDate)) && CanKeepFileForError(f.Error) {
-				filesToKeep[f.Path] = true
-
-				// fmt.Printf("  canKeepFile(%v)\n", CanKeepFileForError(f.Error))
-				if CanKeepFileForError(f.Error) {
-					fileKeptCount++
-				}
-			}
-		}
-		// }
-	}
-
-	fmt.Printf("[%v] files to keep: %+v\n", project.Name, filesToKeep)
-
-	filesToRemove := []File{}
-	for _, f := range allFiles {
-		if _, ok := filesToKeep[f.Path]; !ok {
-			filesToRemove = append(filesToRemove, f)
-		}
-	}
-
-	return filesToRemove
-
-	// filesToKeep := mapset.NewSet()
-	// for _, rs := range project.State {
-	// 	for _, b := range rs.Files {
-	// 		filesToKeep.Add(b)
-	// 	}
-	// }
-
-	// files := mapset.NewSet()
-	// for _, b := range allFiles {
-	// 	files.Add(b)
-	// }
-
-	// filesToRemove := []S3File{}
-	// for _, f := range files.Difference(filesToKeep).ToSlice() {
-	// 	filesToRemove = append(filesToRemove, f.(S3File))
-	// }
-
-	// return filesToRemove
-}
 
 func (project *Project) CheckForIssues() []RuleStateError {
 
@@ -222,21 +146,28 @@ type RuleID string
 // RuleState stores the current state for a rule:
 // i.e. next backup date, selected backup files
 type RuleState struct {
-	Rule             Rule
-	Files            []SelectedFile
-	Next             *time.Time
-	PreviousFileSize *int64
+	Rule  Rule
+	Files []SelectedFile
+	Next  *time.Time
+
+	// global error (when the error is not associated to a specific file)
+	Error error
 }
 
 // Check takes a date (e.g. today) and checks if the backup must be done
 // according to the `Next` field.
 func (rs *RuleState) Check(baseDate time.Time) bool {
+	// when Next is not set, it's because the process has not been executed yet (files might not be available)
+	// so consider it's not necessary to perform a backup now, waiting for the Next date to be set
 	if rs.Next == nil {
 		return false
 	}
+
+	// the process must not be executed when the Next date is not reached yet
 	if (*rs.Next).After(baseDate) {
 		return false
 	}
+
 	return true
 }
 
@@ -249,10 +180,11 @@ func (rs *RuleState) Keep(file File, someError error) error {
 		filesByName[f.Path] = f
 	}
 
-	fmt.Printf("file error: %+v", someError)
+	// fmt.Printf("file error: %+v", someError)
 
 	// check if the file is not already kept
 	if existingFile, ok := filesByName[file.Path]; !ok {
+		// if not, append it to the kept files in state
 		f := SelectedFile{
 			File:       file,
 			Expiration: file.Date.Add(time.Duration(rs.Rule.MinAge) * 24 * time.Hour),
@@ -260,7 +192,7 @@ func (rs *RuleState) Keep(file File, someError error) error {
 		}
 		rs.Files = append(rs.Files, f)
 	} else {
-		// update the eventual error
+		// if it's already in the kept files, update the eventual error
 		existingFile.Error = someError
 		filesByName[file.Path] = existingFile
 	}
@@ -272,7 +204,6 @@ func (rs *RuleState) Keep(file File, someError error) error {
 	if rs.Next == nil || next.After(*rs.Next) {
 		rs.Next = &next
 	}
-	// rs.PreviousFileSize = &file.Size
 
 	return nil
 }
@@ -294,6 +225,7 @@ type RuleStateErrorType int
 const (
 	RuleStateErrorObsolete RuleStateErrorType = iota
 	RuleStateErrorSizeTooSmall
+	RuleStateErrorNoFile
 )
 
 func (r RuleStateErrorType) String() string {
@@ -303,6 +235,8 @@ func (r RuleStateErrorType) String() string {
 		reason = "outdated"
 	case RuleStateErrorSizeTooSmall:
 		reason = "file is too small"
+	case RuleStateErrorNoFile:
+		reason = "no available file"
 	default:
 		reason = "unknown error"
 	}
@@ -316,6 +250,11 @@ type RuleStateError struct {
 }
 
 func (e *RuleStateError) Error() string {
+	f := File{}
+	if e.File == f {
+		return e.Reason.String()
+	}
+
 	return "unable to keep file '" + e.File.Path + "': " + e.Reason.String()
 }
 

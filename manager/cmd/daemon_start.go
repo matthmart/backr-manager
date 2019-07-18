@@ -65,7 +65,7 @@ to quickly create a Cobra application.`,
 			signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
 			// prepare ticker
-			tick := time.NewTicker(2 * time.Second)
+			tick := time.NewTicker(1 * time.Second)
 
 			simulatedRefDates := getSimulatedDates(fileRepo)
 			i := 0
@@ -303,18 +303,18 @@ func getSimulatedDates(fileRepo manager.FileRepository) []func() time.Time {
 			return time.Date(2018, 12, 10, 8, 0, 0, 0, time.Local)
 		},
 		func() time.Time {
-			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test9.tar.gz", Size: 450, Date: time.Date(2018, 12, 11, 5, 0, 0, 0, time.Local)})
+			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test9.tar.gz", Size: 450, Date: time.Date(2018, 12, 11, 5, 0, 0, 0, time.Local)})
 			return time.Date(2018, 12, 11, 8, 0, 0, 0, time.Local)
 		},
 		func() time.Time {
-			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test10.tar.gz", Size: 450, Date: time.Date(2018, 12, 12, 5, 0, 0, 0, time.Local)})
+			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test10.tar.gz", Size: 450, Date: time.Date(2018, 12, 12, 5, 0, 0, 0, time.Local)})
 			return time.Date(2018, 12, 12, 8, 0, 0, 0, time.Local)
 		},
 		func() time.Time {
 			return time.Date(2018, 12, 15, 20, 0, 0, 0, time.Local)
 		},
 		func() time.Time {
-			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test11.tar.gz", Size: 450, Date: time.Date(2018, 12, 16, 5, 0, 0, 0, time.Local)})
+			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test11.tar.gz", Size: 450, Date: time.Date(2018, 12, 16, 5, 0, 0, 0, time.Local)})
 			return time.Date(2018, 12, 16, 8, 0, 0, 0, time.Local)
 		},
 	}

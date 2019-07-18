@@ -8,7 +8,7 @@ import (
 	"github.com/agence-webup/backr/manager"
 )
 
-var sharedFileRepo *fileRepo
+// var sharedFileRepo *fileRepo
 
 type fileRepo struct {
 	Files []manager.File
@@ -19,10 +19,11 @@ type fileRepo struct {
 //
 // The main usage of this repository is unit testing.
 func NewFileRepository() manager.FileRepository {
-	if sharedFileRepo == nil {
-		sharedFileRepo = new(fileRepo)
-	}
-	return sharedFileRepo
+	// if sharedFileRepo == nil {
+	// 	sharedFileRepo = new(fileRepo)
+	// }
+	// return sharedFileRepo
+	return new(fileRepo)
 }
 
 func (repo *fileRepo) GetAll() ([]manager.File, error) {

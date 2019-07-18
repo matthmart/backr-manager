@@ -4,6 +4,7 @@ package manager
 // to work with projects
 type ProjectRepository interface {
 	GetAll() ([]Project, error)
+	GetByName(name string) (*Project, error)
 	Save(project Project) error
 }
 

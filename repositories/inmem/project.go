@@ -2,6 +2,7 @@ package inmem
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,16 +10,17 @@ import (
 	"github.com/agence-webup/backr/manager"
 )
 
-var sharedRepo projectRepo
+// var sharedRepo projectRepo
 
 // NewProjectRepository returns an instance of
 // an in-memory Project Repository
 func NewProjectRepository() manager.ProjectRepository {
-	sharedRepo = projectRepo{
-		filepath: "db.json",
+	sharedRepo := projectRepo{
+		// filepath: "db.json",
+		projectsByName: map[string]manager.Project{},
 	}
 
-	sharedRepo.projectsByName = sharedRepo.readFromFile()
+	// sharedRepo.projectsByName = sharedRepo.readFromFile()
 
 	return &sharedRepo
 }
@@ -60,8 +62,16 @@ func (repo *projectRepo) GetAll() ([]manager.Project, error) {
 	return projects, nil
 }
 
+func (repo *projectRepo) GetByName(name string) (*manager.Project, error) {
+	p, ok := repo.projectsByName[name]
+	if !ok {
+		return nil, fmt.Errorf("project not found")
+	}
+	return &p, nil
+}
+
 func (repo *projectRepo) Save(project manager.Project) error {
 	repo.projectsByName[project.Name] = project
-	repo.saveToFile()
+	// repo.saveToFile()
 	return nil
 }
