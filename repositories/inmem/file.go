@@ -8,8 +8,6 @@ import (
 	"github.com/agence-webup/backr/manager"
 )
 
-// var sharedFileRepo *fileRepo
-
 type fileRepo struct {
 	Files []manager.File
 }
@@ -19,10 +17,6 @@ type fileRepo struct {
 //
 // The main usage of this repository is unit testing.
 func NewFileRepository() manager.FileRepository {
-	// if sharedFileRepo == nil {
-	// 	sharedFileRepo = new(fileRepo)
-	// }
-	// return sharedFileRepo
 	return new(fileRepo)
 }
 
@@ -97,6 +91,7 @@ func (repo *fileRepo) getFileComponents(file manager.File) ([]string, error) {
 	return components, nil
 }
 
+// CreateFakeFile adds the file into memory, accessible by the repo
 func CreateFakeFile(repo manager.FileRepository, file manager.File) {
 	r, ok := repo.(*fileRepo)
 	if !ok {

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// ProjectState represents the state for each rule associated to the project
 type ProjectState map[RuleID]RuleState
 
 // Project represents a configured project in the manager
@@ -15,6 +16,7 @@ type Project struct {
 	State ProjectState
 }
 
+// UpdateState update the rule state of the project, for the specified the ruleID, using the state passed as parameter
 func (project *Project) UpdateState(ruleID RuleID, state RuleState) error {
 	if project.State == nil {
 		project.State = ProjectState{}
@@ -25,67 +27,8 @@ func (project *Project) UpdateState(ruleID RuleID, state RuleState) error {
 	return nil
 }
 
-// func (project *Project) GetFilesToRemove(allFiles []File) []File {
-
-// 	filesToKeep := map[string]int{}
-// 	for _, rs := range project.State {
-// 		for _, f := range rs.Files {
-// 			filesToKeep[f.Path] = 1
-// 		}
-// 	}
-
-// 	// fmt.Printf("[%v] files to keep: %v\n", project.Name, project.State)
-
-// 	filesToRemove := []File{}
-// 	for _, f := range allFiles {
-// 		if _, ok := filesToKeep[f.Path]; !ok {
-// 			filesToRemove = append(filesToRemove, f)
-// 		}
-// 	}
-
-// 	return filesToRemove
-
-// 	// filesToKeep := mapset.NewSet()
-// 	// for _, rs := range project.State {
-// 	// 	for _, b := range rs.Files {
-// 	// 		filesToKeep.Add(b)
-// 	// 	}
-// 	// }
-
-// 	// files := mapset.NewSet()
-// 	// for _, b := range allFiles {
-// 	// 	files.Add(b)
-// 	// }
-
-// 	// filesToRemove := []S3File{}
-// 	// for _, f := range files.Difference(filesToKeep).ToSlice() {
-// 	// 	filesToRemove = append(filesToRemove, f.(S3File))
-// 	// }
-
-// 	// return filesToRemove
-// }
-
-func (project *Project) CheckForIssues() []RuleStateError {
-
-	errors := []RuleStateError{}
-	now := time.Now()
-
-	for _, rs := range project.State {
-		// check for file expiration
-		for _, f := range rs.Files {
-			if f.Expiration.Before(now) {
-				errors = append(errors, RuleStateError{
-					RuleState: rs,
-					File:      f.File,
-					Reason:    RuleStateErrorObsolete,
-				})
-			}
-		}
-	}
-
-	return errors
-}
-
+// RemoveFilesFromState takes a list of files that are just being removed and
+// and update the project state accordingly, for each rule
 func (project *Project) RemoveFilesFromState(removedFiles []File) {
 
 	for _, rs := range project.State {
@@ -109,9 +52,10 @@ func (project *Project) RemoveFilesFromState(removedFiles []File) {
 
 }
 
-func (p *Project) DebugPrint() {
-	fmt.Printf("name: %v\n", p.Name)
-	for id, rs := range p.State {
+// DebugPrint outputs debug information on project
+func (project *Project) DebugPrint() {
+	fmt.Printf("name: %v\n", project.Name)
+	for id, rs := range project.State {
 		fmt.Printf(" - %v\n", id)
 		for _, f := range rs.Files {
 			errState := "✅"
@@ -171,60 +115,15 @@ func (rs *RuleState) Check(baseDate time.Time) bool {
 	return true
 }
 
-// Keep appends the file to the state (the one that must be kept)
-// and set the next backup time
-func (rs *RuleState) Keep(file File, someError error) error {
-	// prepare a map with existing files
-	filesByName := map[string]SelectedFile{}
-	for _, f := range rs.Files {
-		filesByName[f.Path] = f
-	}
-
-	// fmt.Printf("file error: %+v", someError)
-
-	// check if the file is not already kept
-	if existingFile, ok := filesByName[file.Path]; !ok {
-		// if not, append it to the kept files in state
-		f := SelectedFile{
-			File:       file,
-			Expiration: file.Date.Add(time.Duration(rs.Rule.MinAge) * 24 * time.Hour),
-			Error:      someError,
-		}
-		rs.Files = append(rs.Files, f)
-	} else {
-		// if it's already in the kept files, update the eventual error
-		existingFile.Error = someError
-		filesByName[file.Path] = existingFile
-	}
-
-	// update state
-	unit := 24 * time.Hour
-	// unit := 1 * time.Minute
-	next := file.Date.Add(time.Duration(rs.Rule.MinAge) * unit)
-	if rs.Next == nil || next.After(*rs.Next) {
-		rs.Next = &next
-	}
-
-	return nil
-}
-
-// // Clear removes the files that are not needed anymore
-// func (rs *RuleState) Clear() {
-// 	files := SelectedFilesByDateAsc(rs.Files)
-// 	// ensure that files are sorted
-// 	files.Sort()
-// 	// remove the oldest files
-// 	if len(files) > rs.Rule.Count {
-// 		from := len(files) - rs.Rule.Count
-// 		rs.Files = files[from:]
-// 	}
-// }
-
+// RuleStateErrorType represents the reason of a RuleStateError
 type RuleStateErrorType int
 
 const (
+	// RuleStateErrorObsolete indicates that a file is expired
 	RuleStateErrorObsolete RuleStateErrorType = iota
+	// RuleStateErrorSizeTooSmall indicates that a file size seems too small
 	RuleStateErrorSizeTooSmall
+	// RuleStateErrorNoFile indicates that backup files are missing (no specific file is linked)
 	RuleStateErrorNoFile
 )
 
@@ -243,6 +142,7 @@ func (r RuleStateErrorType) String() string {
 	return reason
 }
 
+// RuleStateError represents an error on a rule
 type RuleStateError struct {
 	RuleState RuleState
 	File      File
@@ -256,16 +156,6 @@ func (e *RuleStateError) Error() string {
 	}
 
 	return "unable to keep file '" + e.File.Path + "': " + e.Reason.String()
-}
-
-func CanKeepFileForError(err error) bool {
-	// if err, ok := err.(*RuleStateError); ok {
-	// 	switch err.Reason {
-	// 	case RuleStateErrorSizeTooSmall:
-	// 		return false
-	// 	}
-	// }
-	return true
 }
 
 // RulesByMinAge stores a slice of rules, sorted by min age
@@ -293,18 +183,6 @@ type File struct {
 // FilesByFolder represents
 type FilesByFolder map[string][]File
 
-// FilesSortedByDateAsc returns a slice of files,
-// sorted by date from older to earlier
-func FilesSortedByDateAsc(files []File) []File {
-	f := make([]File, len(files))
-	copy(f, files)
-
-	sorted := sortedFilesByDate(f)
-	sort.Sort(sorted)
-
-	return sorted
-}
-
 // FilesSortedByDateDesc returns a slice of files,
 // sorted by date from earlier to older
 func FilesSortedByDateDesc(files []File) []File {
@@ -329,24 +207,7 @@ func (files sortedFilesByDate) Swap(i, j int) {
 	files[i], files[j] = files[j], files[i]
 }
 
-// // Latest returns the most recent file from the list
-// func (files FilesByDateAsc) Latest() File {
-// 	// sort the backups by desc
-// 	files.Reverse()
-
-// 	now := time.Now()
-// 	for _, f := range files {
-// 		if f.Date.After(now) {
-// 			continue
-// 		}
-// 		return f
-// 	}
-
-// 	// return the latest element
-// 	s := []File(files)
-// 	return s[len(s)-1]
-// }
-
+// SelectedFile represents a file that is selected for a rule
 type SelectedFile struct {
 	File
 	Expiration time.Time
@@ -357,6 +218,7 @@ type SelectedFile struct {
 // which should be sorted by expiration date, from older to earlier
 type SelectedFilesByExpirationDateDesc []SelectedFile
 
+// SelectedFilesSortedByExpirationDateDesc takes a list of SelectedFile and sort them by expiration date in desc order
 func SelectedFilesSortedByExpirationDateDesc(files []SelectedFile) SelectedFilesByExpirationDateDesc {
 	f := make([]SelectedFile, len(files))
 	copy(f, files)
@@ -378,12 +240,3 @@ func (files selectedFilesByExpirationDate) Less(i, j int) bool {
 func (files selectedFilesByExpirationDate) Swap(i, j int) {
 	files[i], files[j] = files[j], files[i]
 }
-
-// // Latest returns the most recent file from the list
-// func (files SelectedFilesByExpirationAsc) Latest() SelectedFile {
-// 	// sort the backups
-// 	files.Sort()
-// 	// return the latest element
-// 	s := []SelectedFile(files)
-// 	return s[len(s)-1]
-// }

@@ -1,7 +1,6 @@
 package process
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -16,12 +15,17 @@ func TestProcessExecution(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 
+			// execute process
 			err := Execute(test.ReferenceDate, test.ProjectRepository, test.FileRepository)
 			if err != nil {
 				t.Fatalf("Execute returned an error: %v", err.Error())
 			}
-
+			// and notify
 			Notify(test.ProjectRepository, test.Notifier)
+
+			/**************************/
+			/**** tests start here ****/
+			/**************************/
 
 			// check the state for each project in repo
 			expectedProjectsStates, expectedFiles, expectedSentAlerts := test.Expected()
@@ -148,7 +152,6 @@ func getProcessTestCases() []processTest {
 			initialState[rule.GetID()] = manager.RuleState{
 				Rule: rule,
 				Next: &initialNext,
-				// Files: []manager.SelectedFile{},
 			}
 
 			projects := []manager.Project{
@@ -218,11 +221,8 @@ func getProcessTestCases() []processTest {
 					expectedState := manager.ProjectState{}
 					expectedNext := time.Date(2019, 03, 26, 8, 0, 0, 0, time.Local)
 					expectedState[rule.GetID()] = manager.RuleState{
-						Rule:  rule,
-						Next:  &expectedNext,
-						Files: []manager.SelectedFile{
-							// manager.SelectedFile{File: files[0], Expiration: files[0].Date.Add(24 * time.Hour), Error: nil},
-						},
+						Rule: rule,
+						Next: &expectedNext,
 					}
 
 					statesByProjectName := map[string]manager.ProjectState{
@@ -481,7 +481,6 @@ func getProcessTestCases() []processTest {
 			initialState[rule.GetID()] = manager.RuleState{
 				Rule: rule,
 				Next: &initialNext,
-				// Files: []manager.SelectedFile{},
 			}
 
 			projects := []manager.Project{
@@ -510,8 +509,8 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					// files are obsolete, so the Next date will not be updated by the date of an old file
-					// so the current Next date remains the same
+					// files are obsolete, so the Next date should not be updated by the date of an old file
+					// so the current Next date should remain the same
 					expectedNext := time.Date(2019, 04, 24, 8, 0, 0, 0, time.Local)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
@@ -572,7 +571,7 @@ func getProcessTestCases() []processTest {
 
 			return processTest{
 				Name:              "kept files are obsolete, but it's fixed",
-				Description:       "initial state containing only obsolete files, but a new fresh backup is coming",
+				Description:       "initial state containing only obsolete files, but a new fresh backup has come",
 				ReferenceDate:     refDate,
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
@@ -714,14 +713,6 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 	}
-}
-
-func printFiles(files []manager.SelectedFile) {
-	fmt.Println("")
-	for _, f := range files {
-		fmt.Printf("  %+v\n", f)
-	}
-	fmt.Println("")
 }
 
 func newMockProjectRepository(projects []manager.Project) manager.ProjectRepository {

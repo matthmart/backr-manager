@@ -5,18 +5,6 @@ import (
 	"time"
 )
 
-// func TestS3FilesByDateAscLatest(t *testing.T) {
-
-// 	files := getSampleFiles()
-
-// 	f := files.Latest()
-
-// 	expected := "file2"
-// 	if f.Filename != expected {
-// 		t.Errorf("sorting failed: expected: %s got: %s", expected, f.Filename)
-// 	}
-// }
-
 func TestRuleStateCheck(t *testing.T) {
 	base := time.Date(2019, 03, 26, 8, 0, 0, 0, time.UTC)
 
@@ -40,19 +28,6 @@ func TestRuleStateCheck(t *testing.T) {
 		t.Fatal("RuleState with a future next date should not trigger a backup")
 	}
 
-}
-
-func TestFilesByDateAsc(t *testing.T) {
-	sampleFiles := getSampleFiles()
-	expected := []string{"file3", "file1", "file2"}
-
-	result := FilesSortedByDateAsc(sampleFiles)
-
-	for i := 0; i < len(sampleFiles); i++ {
-		if expected[i] != result[i].Path {
-			t.Fatalf("wrong order: got=%v expected=%v", result, expected)
-		}
-	}
 }
 
 func TestFilesByDateDesc(t *testing.T) {

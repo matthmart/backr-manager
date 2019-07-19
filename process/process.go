@@ -9,6 +9,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Execute runs the following process, for a specific reference date:
+//   - fetch all projects
+//   - fetch all files
+//   - for each project and each rule of the project:
+//     - check if a backup is needed
+//     - if needed, determine the files fulfilling the rule
+//     - if some files don't fulfill exactly the rule, an error is associated to the file, for this rule
+//     - if backup is needed but no file is available, an error is set to the rule
+//     - if some files are not needed anymore, by any rule, they are deleted, except if this prevents to fulfill the rule
 func Execute(referenceDate time.Time, projectRepo manager.ProjectRepository, fileRepo manager.FileRepository) error {
 	pm := processManager{
 		referenceDate: referenceDate,
@@ -21,10 +30,13 @@ func Execute(referenceDate time.Time, projectRepo manager.ProjectRepository, fil
 	return err
 }
 
-func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) {
+// Notify is responsible to send alerts, according to the state of each projects.
+// If an error is associated to a rule or a file linked to a rule, an alert will be sent
+func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) error {
 	projects, err := projectRepo.GetAll()
 	if err != nil {
 		log.Fatal().AnErr("error", err).Msg("unable to fetch all projects")
+		return err
 	}
 
 	type projectError struct {
@@ -47,7 +59,6 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) {
 			}
 
 			var firstErr *manager.RuleStateError
-			validFilesCount := 0
 
 			files := manager.SelectedFilesSortedByExpirationDateDesc(ruleState.Files)
 			for i, f := range files {
@@ -57,8 +68,6 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) {
 					if i == 0 {
 						firstErr = err
 					}
-				} else {
-					validFilesCount++
 				}
 			}
 
@@ -69,10 +78,6 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) {
 		}
 
 		if projectErr.Count > 0 {
-			// lvl := manager.Warning
-			// if projectErr.Reasons[manager.RuleStateErrorObsolete] {
-			// 	lvl = manager.Critic
-			// }
 			reasonsLabels := []string{}
 			for reason := range projectErr.Reasons {
 				reasonsLabels = append(reasonsLabels, reason.String())
@@ -93,6 +98,8 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) {
 		}
 
 	}
+
+	return nil
 }
 
 type processManager struct {
@@ -172,11 +179,12 @@ func (pm *processManager) processForProject(project *manager.Project, filesByFol
 
 	// remove unused files
 	filesToRemove := pm.getFilesToRemove(project, files, pm.referenceDate)
-	fmt.Printf("[%v] needs to remove: %v\n", project.Name, filesToRemove)
+	log.Info().Str("project", project.Name).Int("count", len(filesToRemove)).Msg("files to be removed")
 
 	for _, f := range filesToRemove {
 		err := pm.fileRepo.RemoveFile(f)
 		if err != nil {
+			log.Error().Str("project", project.Name).Str("path", f.Path).Msg("unable to remove file")
 			return fmt.Errorf("unable to remove file: %v", err)
 		}
 	}
@@ -184,9 +192,9 @@ func (pm *processManager) processForProject(project *manager.Project, filesByFol
 	// save the state after removal
 	project.RemoveFilesFromState(filesToRemove)
 
-	fmt.Println("")
-	project.DebugPrint()
-	fmt.Println("")
+	// fmt.Println("")
+	// project.DebugPrint()
+	// fmt.Println("")
 
 	return nil
 }
@@ -198,7 +206,7 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 	olderRefDate := pm.referenceDate
 
 	if len(files) == 0 {
-		log.Debug().Str("func", "selectFilesToBackup").Msg("no file available")
+		log.Debug().Caller().Msg("no file available")
 		err := manager.RuleStateError{
 			RuleState: *ruleState,
 			Reason:    manager.RuleStateErrorNoFile,
@@ -221,8 +229,8 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 			existingFilesByPath[f.Path] = f
 		}
 
-		log.Debug().Str("func", "selectFilesToBackup").Int("count", len(files)).Msgf("available files count")
-		log.Debug().Str("func", "selectFilesToBackup").Int("count", len(existingFilesByExpDesc)).Msg("existing files count")
+		log.Debug().Caller().Int("count", len(files)).Msgf("available files count")
+		log.Debug().Caller().Int("count", len(existingFilesByExpDesc)).Msg("existing files count")
 
 		// iterate on each file
 		for i, f := range files {
@@ -233,11 +241,11 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 			// i.e. minAge: 3 => if we keep the 'today file', we want to keep the '3 days before file'
 			// and not the 'yesterday file'
 			if f.Date.After(olderRefDate) {
-				log.Debug().Str("func", "selectFilesToBackup").Str("date", f.Date.String()).Str("ref_date", olderRefDate.String()).Str("path", f.Path).Msg("file date is after ref date")
+				log.Debug().Caller().Time("date", f.Date).Time("ref_date", olderRefDate).Str("path", f.Path).Msg("file date is after ref date")
 				continue
 			}
 
-			log.Debug().Str("func", "selectFilesToBackup").Str("date", f.Date.String()).Str("ref_date", olderRefDate.String()).Str("path", f.Path).Msg("candidate file")
+			log.Debug().Caller().Time("date", f.Date).Time("ref_date", olderRefDate).Str("path", f.Path).Msg("candidate file")
 
 			// prepare the expiration date of the file
 			expiration := f.Date.Add(time.Duration(ruleState.Rule.MinAge) * 24 * time.Hour)
@@ -258,6 +266,7 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 						Reason:    manager.RuleStateErrorSizeTooSmall,
 					}
 					fileError = &err
+					log.Debug().Caller().Int64("previous_size", previousSize).Int64("actual_size", f.Size).Str("path", f.Path).Msg("file is at least 50% smaller than previous backup")
 				}
 			}
 
@@ -269,6 +278,7 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 					Reason:    manager.RuleStateErrorObsolete,
 				}
 				fileError = &err
+				log.Debug().Caller().Time("ref_date", olderRefDate).Time("expiration", expiration).Str("path", f.Path).Msg("file is obsolete")
 			}
 
 			if fileError != nil {
@@ -287,10 +297,12 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 					Error:      fileError,
 				}
 				ruleState.Files = append(ruleState.Files, *selectedFile)
+				log.Debug().Caller().Str("path", f.Path).Msg("new file, adding it to state")
 			} else {
 				// if it's already in the kept files, update the eventual error
 				if i, ok := existingFilesIndexesByPath[f.Path]; ok && fileError != nil {
 					ruleState.Files[i].Error = fileError
+					log.Debug().Caller().Str("path", f.Path).Msg("existing file, update the associated error")
 				}
 			}
 
@@ -300,15 +312,27 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 				// unit := 1 * time.Minute
 				next := f.Date.Add(time.Duration(ruleState.Rule.MinAge) * unit)
 				if ruleState.Next == nil || next.After(*ruleState.Next) {
+					l := log.Debug().Caller()
+					if ruleState.Next != nil {
+						l = l.Time("previous_next", *ruleState.Next)
+					} else {
+						l = l.Str("previous_next", "nil")
+					}
+					l.Time("new_next", next).Str("rule_id", string(ruleState.Rule.GetID())).Msg("Next date updated")
 					ruleState.Next = &next
 				}
+			} else {
+				log.Debug().Caller().Str("path", f.Path).Msg("Next date not updated: file has an error")
 			}
 
 			if err, ok := fileError.(*manager.RuleStateError); ok && err.Reason == manager.RuleStateErrorSizeTooSmall {
 				// don't update the refDate, trying to find another file to fulfill the needs of the rule
+				log.Debug().Caller().Str("rule_id", string(ruleState.Rule.GetID())).Str("path", f.Path).Msg("file is too small, trying to find another file for the rule")
 			} else {
 				// substract (minAge * 24h)
-				olderRefDate = olderRefDate.Add(time.Duration(-ruleState.Rule.MinAge) * 24 * time.Hour)
+				newRefDate := olderRefDate.Add(time.Duration(-ruleState.Rule.MinAge) * 24 * time.Hour)
+				log.Debug().Caller().Time("older_ref_date", olderRefDate).Time("new_ref_date", newRefDate).Str("rule_id", string(ruleState.Rule.GetID())).Msg("decrease reference date")
+				olderRefDate = newRefDate
 			}
 		}
 	}
@@ -340,31 +364,21 @@ func (pm *processManager) getFilesToRemove(project *manager.Project, allFiles []
 
 		fileKeptCount := 0
 		for _, f := range filesByExpDateDesc {
-
 			maxExpiration := filesMaxExpiration[f.Path]
-			// if maxExpiration.Before(now) && fileKeptCount > rs.Rule.Count {
-			// 	filesToKeep[f.Path] = false
-			// } else {
-			// 	filesToKeep[f.Path] = true
-			// 	fileKeptCount++
-			// }
-			fmt.Printf("%v: (fileKeptCount(%v) < rs.Rule.Count(%v) || maxExp(%v).After(%v))  && CanKeepFileForError(%v)\n", f.Path, fileKeptCount, rs.Rule.Count, maxExpiration, referenceDate, pm.canKeepFileForError(f.Error))
 
-			// TODO: vérifier si 'CanKeepFileForError' est nécessaire dans le if
-			// we are keeping too small files, but we don't want them to count into the reliable backups
-			if fileKeptCount < rs.Rule.Count || maxExpiration.After(referenceDate) /* && pm.canKeepFileForError(f.Error)*/ {
+			// we want to keep at least the rule count, and if they expire later than reference date, we keep them too
+			if fileKeptCount < rs.Rule.Count || maxExpiration.After(referenceDate) {
 				filesToKeep[f.Path] = true
 
-				// fmt.Printf("  canKeepFile(%v)\n", CanKeepFileForError(f.Error))
+				// we are keeping too small files, but we don't want them to count into the reliable backups
 				if pm.canKeepFileForError(f.Error) {
 					fileKeptCount++
 				}
 			}
 		}
-		// }
 	}
 
-	fmt.Printf("[%v] files to keep: %+v\n", project.Name, filesToKeep)
+	log.Info().Str("project", project.Name).Int("count", len(filesToKeep)).Msg("files to keep")
 
 	filesToRemove := []manager.File{}
 	for _, f := range allFiles {
@@ -374,25 +388,6 @@ func (pm *processManager) getFilesToRemove(project *manager.Project, allFiles []
 	}
 
 	return filesToRemove
-
-	// filesToKeep := mapset.NewSet()
-	// for _, rs := range project.State {
-	// 	for _, b := range rs.Files {
-	// 		filesToKeep.Add(b)
-	// 	}
-	// }
-
-	// files := mapset.NewSet()
-	// for _, b := range allFiles {
-	// 	files.Add(b)
-	// }
-
-	// filesToRemove := []S3File{}
-	// for _, f := range files.Difference(filesToKeep).ToSlice() {
-	// 	filesToRemove = append(filesToRemove, f.(S3File))
-	// }
-
-	// return filesToRemove
 }
 
 func (pm *processManager) canKeepFileForError(err error) bool {
