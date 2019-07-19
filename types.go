@@ -11,9 +11,10 @@ type ProjectState map[RuleID]RuleState
 
 // Project represents a configured project in the manager
 type Project struct {
-	Name  string
-	Rules []Rule
-	State ProjectState
+	Name      string
+	Rules     []Rule
+	State     ProjectState
+	CreatedAt time.Time
 }
 
 // UpdateState update the rule state of the project, for the specified the ruleID, using the state passed as parameter

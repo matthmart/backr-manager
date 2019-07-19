@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"github.com/agence-webup/backr/manager"
 )
@@ -71,6 +72,12 @@ func (repo *projectRepo) GetByName(name string) (*manager.Project, error) {
 }
 
 func (repo *projectRepo) Save(project manager.Project) error {
+
+	// set created at if needed
+	if project.CreatedAt.IsZero() {
+		project.CreatedAt = time.Now()
+	}
+
 	repo.projectsByName[project.Name] = project
 	// repo.saveToFile()
 	return nil
