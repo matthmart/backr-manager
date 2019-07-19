@@ -5,7 +5,7 @@ type Notifier interface {
 	Send(alert Alert)
 }
 
-// Alert stores notfication data
+// Alert stores notification data
 type Alert struct {
 	Title    string
 	Message  string
