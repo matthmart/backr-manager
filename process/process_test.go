@@ -52,6 +52,20 @@ func TestProcessExecution(t *testing.T) {
 							}
 						})
 
+						t.Run("ruleState must have an error if backup files are expected but no file is available", func(t *testing.T) {
+							if rs.Error != nil || expected.Error != nil {
+								rsError, ok1 := rs.Error.(*manager.RuleStateError)
+								expectedError, ok2 := expected.Error.(*manager.RuleStateError)
+								if ok1 && ok2 {
+									if rsError.Reason != expectedError.Reason {
+										t.Errorf("ruleState error is wrong: expected=%v got=%v", expectedError.Reason, rsError.Reason)
+									}
+								} else {
+									t.Errorf("wrong ruleState error: expected:%+v got=%+v", expectedError, rsError)
+								}
+							}
+						})
+
 						// the files must be correctly selected
 						t.Run("the files must be correctly selected", func(t *testing.T) {
 							if len(rs.Files) != len(expected.Files) {
@@ -639,9 +653,7 @@ func getProcessTestCases() []processTest {
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule:  rule,
 						Next:  &expectedNext,
-						Files: []manager.SelectedFile{
-							// manager.SelectedFile{File: files[0], Expiration: files[0].Date.Add(24 * time.Hour), Error: nil},
-						},
+						Error: &manager.RuleStateError{Reason: manager.RuleStateErrorNoFile},
 					}
 
 					statesByProjectName := map[string]manager.ProjectState{
