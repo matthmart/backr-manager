@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+option go_package = "proto";
+
+service BackrApi {
+    rpc GetProjects (GetProjectsRequest) returns (ProjectsListResponse);
+    rpc GetProject (GetProjectRequest) returns (ProjectResponse);
+    rpc CreateProject (CreateProjectRequest) returns (CreateProjectResponse);
+}
+
+message GetProjectsRequest {
+    enum OrderBy {
+        NAME = 0;
+        CREATION_DATE = 1;
+        ISSUES_COUNT = 2;
+    }
+    enum OrderDirection {
+        ASC = 0;
+        DESC = 1;
+    }
+
+    OrderBy order_by = 1;
+    OrderDirection order_dir = 2;
+}
+
+message ProjectsListResponse {
+    repeated Project projects = 1;
+    int32 total = 2;
+}
+
+message CreateProjectRequest {
+    string name = 1;
+    repeated Rule rules = 2;
+}
+
+message CreateProjectResponse {
+    Project project = 1;
+}
+
+message GetProjectRequest {
+    string name = 1;
+}
+
+message ProjectResponse {
+    Project project = 1;
+}
+
+message Project {
+    string name = 1;
+    repeated Rule rules = 2;
+    
+    int64 created_at = 3;
+    int32 issues_count = 4;
+}
+
+message Rule {
+    int32 min_age = 1;
+    int32 count = 2;
+    repeated File files = 3;
+}
+
+message File {
+    string path = 1;
+    int64 date = 2;
+    int64 size = 3;
+}

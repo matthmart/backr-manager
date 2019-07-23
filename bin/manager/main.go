@@ -1,4 +1,4 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2018 Matthieu MARTIN <matthieu@agence-webup.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package main
 import (
 	"os"
 
-	"github.com/agence-webup/backr/manager/manager/cmd"
+	"github.com/agence-webup/backr/manager/bin/manager/cmd"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )

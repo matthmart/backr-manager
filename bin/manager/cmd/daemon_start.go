@@ -1,4 +1,4 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2018 Matthieu MARTIN <matthieu@agence-webup.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,17 @@
 package cmd
 
 import (
+	"context"
+	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
+
+	"github.com/agence-webup/backr/manager/api"
+	"github.com/agence-webup/backr/manager/proto"
+	"google.golang.org/grpc"
 
 	"github.com/agence-webup/backr/manager"
 
@@ -57,46 +64,31 @@ to quickly create a Cobra application.`,
 		// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test1.tar.gz", Size: 450, Date: time.Date(2018, 12, 1, 5, 0, 0, 0, time.Local)})
 		// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test2.tar.gz", Size: 455, Date: time.Date(2018, 12, 2, 5, 0, 0, 0, time.Local)})
 
-		done := make(chan int, 1)
+		// done := make(chan int, 1)
 
-		go func() {
-			// prepare chan for listening to SIGINT signal
-			sigint := make(chan os.Signal)
-			signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
+		// // prepare chan for listening to SIGINT signal
+		// sigint := make(chan os.Signal)
+		// signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
-			// prepare ticker
-			tick := time.NewTicker(1 * time.Second)
+		ctx, cancel := context.WithCancel(context.Background())
+		wg := sync.WaitGroup{}
 
-			simulatedRefDates := getSimulatedDates(fileRepo)
-			i := 0
+		// each goroutine must increment WaitGroup counter
+		startProcess(ctx, &wg, projectRepo, fileRepo, notifier)
+		startAPI(ctx, &wg, projectRepo)
 
-			for {
-				select {
-				case <-tick.C:
-					log.Debug().Msg("tick: executing process")
+		// prepare chan for listening to SIGINT signal
+		sigint := make(chan os.Signal)
+		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
+		// wait for SIGINT
+		<-sigint
+		log.Debug().Msg("received SIGINT. cleaning...")
 
-					referenceDate := simulatedRefDates[i]()
-					log.Debug().Time("ref_date", referenceDate).Msg("tick: reference date picked")
+		// cancelling context
+		cancel()
+		// wait for goroutines to be finished
+		wg.Wait()
 
-					err := process.Execute(referenceDate, projectRepo, fileRepo, notifier)
-					if err != nil {
-						log.Error().Err(err).Msg("unable to execute process")
-					}
-
-					log.Debug().Msg("---------------")
-
-					i++
-				case <-sigint:
-					log.Debug().Msg("received SIGINT signal")
-					done <- 1
-					return
-				}
-			}
-		}()
-
-		log.Debug().Msg("process started")
-
-		<-done
 		log.Debug().Msg("exiting")
 	},
 }
@@ -113,6 +105,82 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func startProcess(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.ProjectRepository, fileRepo manager.FileRepository, notifier manager.Notifier) {
+
+	wg.Add(1)
+
+	log.Debug().Msg("process started")
+
+	go func() {
+		defer wg.Done()
+
+		// prepare ticker
+		tick := time.NewTicker(1 * time.Second)
+
+		for {
+			select {
+			case <-tick.C:
+				referenceDate := time.Now()
+
+				log.Debug().Time("ref_date", referenceDate).Msg("tick: executing process...")
+				err := process.Execute(referenceDate, projectRepo, fileRepo)
+				if err != nil {
+					log.Error().Err(err).Msg("error executing process")
+				}
+				log.Debug().Msg("tick: process done")
+
+				log.Debug().Msg("tick: starting notify...")
+				err = process.Notify(projectRepo, notifier)
+				if err != nil {
+					log.Error().Err(err).Msg("unable to execute process")
+				}
+				log.Debug().Msg("tick: notify done")
+
+				log.Debug().Msg("---------------")
+
+			case <-ctx.Done():
+				tick.Stop()
+				log.Debug().Msg("process cleaning done.")
+				return
+			}
+		}
+	}()
+}
+
+func startAPI(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.ProjectRepository) {
+
+	wg.Add(1)
+
+	addr := "127.0.0.1:3000"
+
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatal().Str("addr", addr).Err(err).Msg("grpc: failed to listen on addr")
+	}
+
+	backrSrv := api.NewServer(projectRepo)
+	srv := grpc.NewServer()
+	proto.RegisterBackrApiServer(srv, backrSrv)
+
+	log.Debug().Str("addr", addr).Msg("API started")
+
+	// http.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
+	// 	w.Write([]byte("OK\n"))
+	// })
+
+	go func() {
+		srv.Serve(lis)
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		<-ctx.Done()
+		srv.GracefulStop()
+		log.Debug().Msg("API stopped")
+	}()
 }
 
 // func getSimulatedDates(fileRepo manager.FileRepository) []func() time.Time {

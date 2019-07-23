@@ -1,7 +1,6 @@
 package inmem
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/agence-webup/backr/manager"
@@ -31,7 +30,7 @@ func (repo *projectRepo) GetAll() ([]manager.Project, error) {
 func (repo *projectRepo) GetByName(name string) (*manager.Project, error) {
 	p, ok := repo.projectsByName[name]
 	if !ok {
-		return nil, fmt.Errorf("project not found")
+		return nil, nil
 	}
 	return &p, nil
 }
