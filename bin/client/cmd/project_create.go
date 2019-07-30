@@ -58,15 +58,15 @@ var createCmd = &cobra.Command{
 		for _, r := range rawRules {
 			comps := strings.Split(r, ".")
 			if len(comps) == 2 {
-				minAge, err := strconv.ParseInt(comps[0], 10, 32)
-				if err != nil || minAge == 0 {
-					continue
-				}
-				count, err := strconv.ParseInt(comps[1], 10, 32)
+				count, err := strconv.ParseInt(comps[0], 10, 32)
 				if err != nil || count == 0 {
 					continue
 				}
-				rules = append(rules, &proto.Rule{MinAge: int32(minAge), Count: int32(count)})
+				minAge, err := strconv.ParseInt(comps[1], 10, 32)
+				if err != nil || minAge == 0 {
+					continue
+				}
+				rules = append(rules, &proto.Rule{Count: int32(count), MinAge: int32(minAge)})
 			}
 		}
 
@@ -107,7 +107,7 @@ func init() {
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	createCmd.Flags().StringP("name", "n", "", "Name of the project. Should be unique")
-	createCmd.Flags().StringSliceP("rule", "r", []string{}, "Define a rule with this pattern: MIN_AGE.COUNT  (i.e -r 1.3)")
+	createCmd.Flags().StringSliceP("rule", "r", []string{}, "Define a rule with this pattern: COUNT.MIN_AGE  (i.e -r 3.1)")
 
 	createCmd.MarkFlagRequired("name")
 	createCmd.MarkFlagRequired("rule")

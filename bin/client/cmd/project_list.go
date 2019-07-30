@@ -25,6 +25,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/agence-webup/backr/manager/proto"
@@ -61,14 +63,18 @@ var listCmd = &cobra.Command{
 		if len(resp.Projects) == 0 {
 			fmt.Println("empty list")
 		}
+
+		w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
+		fmt.Fprintf(w, "%v\t%v\t%v\t\n", "NAME", "CREATED_AT", "RULES (count.min_age)")
 		for _, p := range resp.Projects {
 			t := time.Unix(p.CreatedAt, 0)
-			fmt.Printf("%v (created at %v)\n", p.Name, t)
+			rules := []string{}
 			for _, r := range p.Rules {
-				fmt.Printf(" - min_age=%v count=%v\n", r.MinAge, r.Count)
+				rules = append(rules, fmt.Sprintf("%v.%v", r.Count, r.MinAge))
 			}
-			fmt.Println("")
+			fmt.Fprintf(w, "%v\t%v\t%v\t\n", p.Name, t, strings.Join(rules, " "))
 		}
+		w.Flush()
 	},
 }
 

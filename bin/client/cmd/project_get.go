@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"text/tabwriter"
 	"time"
 
 	"github.com/agence-webup/backr/manager/proto"
@@ -68,11 +69,35 @@ var getCmd = &cobra.Command{
 
 		p := resp.Project
 
-		fmt.Printf("%v (created at %v)\n", p.Name, time.Unix(p.CreatedAt, 0))
-		for _, r := range p.Rules {
-			fmt.Printf(" - min_age=%v count=%v\n", r.MinAge, r.Count)
+		showAll, err := cmd.Flags().GetBool("all")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		fmt.Println("")
+
+		if showAll {
+			w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
+			fmt.Fprintf(w, "%v\t%v\t\n", "PROJECT NAME", "CREATED AT")
+			fmt.Fprintf(w, "%v\t%v\t\n", p.Name, time.Unix(p.CreatedAt, 0))
+			w.Flush()
+			fmt.Println("")
+		}
+
+		showFiles, err := cmd.Flags().GetBool("files")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if showFiles || showAll {
+			w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
+			for _, r := range p.Rules {
+				for _, f := range r.Files {
+					fmt.Fprintf(w, "%v\t%v\t%d\t%v\t\n", f.Path, time.Unix(f.Date, 0), f.Size, fmt.Sprintf("%d.%d", r.Count, r.MinAge))
+				}
+			}
+			w.Flush()
+			fmt.Println("")
+		}
 
 	},
 }
@@ -89,4 +114,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	getCmd.Flags().BoolP("files", "f", true, "Display files associated to project")
+	getCmd.Flags().BoolP("all", "a", false, "Display all informations associated to project")
 }
