@@ -144,6 +144,9 @@ func (pm *processManager) processForProject(project *manager.Project, filesByFol
 	// sort files by date (desc)
 	filesByDateDesc := manager.FilesSortedByDateDesc(files)
 
+	// to track if a file selection has been done
+	hasPerformedSelection := false
+
 	// process each rule
 	for _, rule := range rulesByMinAgeDesc {
 		id := rule.GetID()
@@ -161,13 +164,24 @@ func (pm *processManager) processForProject(project *manager.Project, filesByFol
 		// check if a backup is wanted by the rule
 		backupIsNeeded := ruleState.Check(pm.referenceDate)
 		if backupIsNeeded {
+			log.Info().Str("project", project.Name).Str("rule_id", string(rule.GetID())).Time("next_date", *ruleState.Next).Msg("backup needed. selecting files...")
+
 			pm.selectFilesToBackup(&ruleState, filesByDateDesc)
+			hasPerformedSelection = true
+		} else {
+			// logging
+			if ruleState.Next == nil {
+				log.Info().Str("project", project.Name).Str("rule_id", string(rule.GetID())).Msg("backup not needed. Next date is not set yet.")
+			} else {
+				log.Info().Str("project", project.Name).Str("rule_id", string(rule.GetID())).Time("next_date", *ruleState.Next).Time("ref_date", pm.referenceDate).Msg("backup not needed")
+			}
 		}
 
 		// set the next backup date for fresh state
 		if ruleState.Next == nil {
 			n := pm.referenceDate.Add(1 * time.Hour * 24)
 			ruleState.Next = &n
+			log.Info().Time("next_date", n).Msg("set Next date")
 		}
 
 		// update state
@@ -177,20 +191,22 @@ func (pm *processManager) processForProject(project *manager.Project, filesByFol
 		pm.projectRepo.Save(*project)
 	}
 
-	// remove unused files
-	filesToRemove := pm.getFilesToRemove(project, files, pm.referenceDate)
-	log.Info().Str("project", project.Name).Int("count", len(filesToRemove)).Msg("files to be removed")
+	// remove unused files, only if a file selection has been done
+	if hasPerformedSelection {
+		filesToRemove := pm.getFilesToRemove(project, files, pm.referenceDate)
+		log.Info().Str("project", project.Name).Int("count", len(filesToRemove)).Msg("files to be removed")
 
-	for _, f := range filesToRemove {
-		err := pm.fileRepo.RemoveFile(f)
-		if err != nil {
-			log.Error().Str("project", project.Name).Str("path", f.Path).Msg("unable to remove file")
-			return fmt.Errorf("unable to remove file: %v", err)
+		for _, f := range filesToRemove {
+			err := pm.fileRepo.RemoveFile(f)
+			if err != nil {
+				log.Error().Str("project", project.Name).Str("path", f.Path).Msg("unable to remove file")
+				return fmt.Errorf("unable to remove file: %v", err)
+			}
 		}
-	}
 
-	// save the state after removal
-	project.RemoveFilesFromState(filesToRemove)
+		// save the state after removal
+		project.RemoveFilesFromState(filesToRemove)
+	}
 
 	// fmt.Println("")
 	// project.DebugPrint()

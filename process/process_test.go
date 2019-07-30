@@ -724,6 +724,48 @@ func getProcessTestCases() []processTest {
 				},
 			}
 		}(),
+		func() processTest {
+			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.Local)
+			rule := manager.Rule{Count: 3, MinAge: 1}
+			files := []manager.File{
+				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 25, 7, 51, 0, 0, time.Local), Size: 300},
+				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 25, 7, 54, 0, 0, time.Local), Size: 300},
+			}
+
+			projects := []manager.Project{
+				manager.Project{
+					Name: "project1",
+					Rules: []manager.Rule{
+						rule,
+					},
+				},
+			}
+
+			return processTest{
+				Name:              "no state, some very recent files",
+				Description:       "No initial state, some files are present but are too recent to be selected. They should not be deleted",
+				ReferenceDate:     refDate,
+				ProjectRepository: newMockProjectRepository(projects),
+				FileRepository:    newMockFileRepository(files),
+				Notifier:          newTestNotifier(),
+				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+					expectedState := manager.ProjectState{}
+					expectedNext := time.Date(2019, 03, 26, 8, 0, 0, 0, time.Local)
+					expectedState[rule.GetID()] = manager.RuleState{
+						Rule: rule,
+						Next: &expectedNext,
+					}
+
+					statesByProjectName := map[string]manager.ProjectState{
+						"project1": expectedState,
+					}
+					expectedFilesInRepo := files
+					expectedSentAlerts := []manager.Alert{}
+
+					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+				},
+			}
+		}(),
 	}
 }
 
