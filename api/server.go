@@ -103,6 +103,41 @@ func (srv *server) CreateProject(ctx context.Context, req *proto.CreateProjectRe
 	return &resp, nil
 }
 
+func (srv *server) GetFiles(ctx context.Context, req *proto.GetFilesRequest) (*proto.GetFilesResponse, error) {
+	if req.ProjectName != "" {
+		filesByFolder, err := srv.FileRepo.GetAllByFolder()
+		if err != nil {
+			return nil, status.Error(codes.Internal, "unable to fetch files:"+err.Error())
+		}
+
+		rawFiles := filesByFolder[req.ProjectName]
+		files := []*proto.File{}
+		for _, rf := range rawFiles {
+			f := transformToProtoFile(rf)
+			files = append(files, &f)
+		}
+
+		return &proto.GetFilesResponse{
+			Files: files,
+		}, nil
+	}
+
+	// all files
+	rawFiles, err := srv.FileRepo.GetAll()
+	if err != nil {
+		return nil, status.Error(codes.Internal, "unable to fetch files:"+err.Error())
+	}
+	files := []*proto.File{}
+	for _, rf := range rawFiles {
+		f := transformToProtoFile(rf)
+		files = append(files, &f)
+	}
+
+	return &proto.GetFilesResponse{
+		Files: files,
+	}, nil
+}
+
 func transformToProtoProject(project manager.Project) proto.Project {
 	rules := []*proto.Rule{}
 	for _, r := range project.Rules {
@@ -118,4 +153,14 @@ func transformToProtoProject(project manager.Project) proto.Project {
 	}
 
 	return p
+}
+
+func transformToProtoFile(file manager.File) proto.File {
+	f := proto.File{
+		Path: file.Path,
+		Date: file.Date.Unix(),
+		Size: file.Size,
+	}
+
+	return f
 }

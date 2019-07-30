@@ -23,6 +23,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/agence-webup/backr/manager/config"
+
 	"github.com/agence-webup/backr/manager/api"
 	"github.com/agence-webup/backr/manager/proto"
 	"google.golang.org/grpc"
@@ -32,6 +34,7 @@ import (
 	"github.com/agence-webup/backr/manager/notifier/basic"
 	"github.com/agence-webup/backr/manager/process"
 	"github.com/agence-webup/backr/manager/repositories/inmem"
+	"github.com/agence-webup/backr/manager/repositories/s3"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -50,15 +53,17 @@ to quickly create a Cobra application.`,
 
 		// configuration
 		log.Debug().Msg("fetching config")
-		//config := config.Get()
+		config := config.Get()
 
 		// prepare tools
 		notifier := basic.NewNotifier()
 		projectRepo := inmem.NewProjectRepository()
-		fileRepo := inmem.NewFileRepository()
-		// if err != nil {
-		// 	log.Fatal().Str("err", err.Error()).Msg("unable to setup S3 client")
-		// }
+		// fileRepo := inmem.NewFileRepository()
+		fileRepo, err := s3.NewFileRepository(config.S3)
+		if err != nil {
+			log.Error().Str("err", err.Error()).Msg("unable to setup S3 file repository")
+			os.Exit(1)
+		}
 
 		// simulate files
 		// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test1.tar.gz", Size: 450, Date: time.Date(2018, 12, 1, 5, 0, 0, 0, time.Local)})
@@ -75,7 +80,7 @@ to quickly create a Cobra application.`,
 
 		// each goroutine must increment WaitGroup counter
 		startProcess(ctx, &wg, projectRepo, fileRepo, notifier)
-		startAPI(ctx, &wg, projectRepo)
+		startAPI(ctx, &wg, projectRepo, fileRepo)
 
 		// prepare chan for listening to SIGINT signal
 		sigint := make(chan os.Signal)
@@ -117,7 +122,7 @@ func startProcess(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.P
 		defer wg.Done()
 
 		// prepare ticker
-		tick := time.NewTicker(1 * time.Second)
+		tick := time.NewTicker(10 * time.Second)
 
 		for {
 			select {
@@ -149,7 +154,7 @@ func startProcess(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.P
 	}()
 }
 
-func startAPI(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.ProjectRepository) {
+func startAPI(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.ProjectRepository, fileRepo manager.FileRepository) {
 
 	wg.Add(1)
 
@@ -160,7 +165,7 @@ func startAPI(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.Proje
 		log.Fatal().Str("addr", addr).Err(err).Msg("grpc: failed to listen on addr")
 	}
 
-	backrSrv := api.NewServer(projectRepo)
+	backrSrv := api.NewServer(projectRepo, fileRepo)
 	srv := grpc.NewServer()
 	proto.RegisterBackrApiServer(srv, backrSrv)
 
