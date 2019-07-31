@@ -181,7 +181,7 @@ type File struct {
 	Size int64
 }
 
-// FilesByFolder represents
+// FilesByFolder represents files mapped by their parent folder
 type FilesByFolder map[string][]File
 
 // FilesSortedByDateDesc returns a slice of files,
