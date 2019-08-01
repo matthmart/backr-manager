@@ -142,6 +142,19 @@ func transformToProtoProject(project manager.Project) proto.Project {
 	rules := []*proto.Rule{}
 	for _, r := range project.Rules {
 		rule := proto.Rule{MinAge: int32(r.MinAge), Count: int32(r.Count)}
+
+		if state, ok := project.State[r.GetID()]; ok {
+			rule.Error = transformToProtoError(state.Error)
+
+			files := []*proto.File{}
+			for _, f := range state.Files {
+				file := proto.File{Path: f.Path, Date: f.Date.Unix(), Size: f.Size, Expiration: f.Expiration.Unix()}
+				file.Error = transformToProtoError(f.Error)
+				files = append(files, &file)
+			}
+			rule.Files = files
+		}
+
 		rules = append(rules, &rule)
 	}
 
@@ -163,4 +176,21 @@ func transformToProtoFile(file manager.File) proto.File {
 	}
 
 	return f
+}
+
+func transformToProtoError(err *manager.RuleStateError) proto.Error {
+	if err == nil {
+		return proto.Error_NO_ERROR
+	}
+
+	switch err.Reason {
+	case manager.RuleStateErrorObsolete:
+		return proto.Error_OBSOLETE
+	case manager.RuleStateErrorSizeTooSmall:
+		return proto.Error_TOO_SMALL
+	case manager.RuleStateErrorNoFile:
+		return proto.Error_NO_FILE
+	}
+
+	return proto.Error_UNKNOWN
 }

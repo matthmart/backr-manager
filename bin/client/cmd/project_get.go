@@ -32,6 +32,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// based on https://gist.github.com/ik5/d8ecde700972d4378d87
+const (
+	NoticeColor = "\033[1;36m%s\033[0m"
+	ErrorColor  = "\033[1;31m%s\033[0m"
+)
+
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get [PROJECT_NAME]",
@@ -91,8 +97,17 @@ var getCmd = &cobra.Command{
 		if showFiles || showAll {
 			w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
 			for _, r := range p.Rules {
+				fmt.Printf("\033[1;36m%s\033[0m\n", fmt.Sprintf("%d.%d", r.Count, r.MinAge))
+				if r.Error > 0 {
+					fmt.Printf("%v %v\n", fmt.Sprintf(ErrorColor, "error:"), r.Error.String())
+				}
+				fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t\n", "PATH", "DATE", "EXPIRE AT", "SIZE", "ERROR")
 				for _, f := range r.Files {
-					fmt.Fprintf(w, "%v\t%v\t%d\t%v\t\n", f.Path, time.Unix(f.Date, 0), f.Size, fmt.Sprintf("%d.%d", r.Count, r.MinAge))
+					errTxt := "-"
+					if f.Error > 0 {
+						errTxt = fmt.Sprintf(ErrorColor, f.Error.String())
+					}
+					fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t\n", f.Path, time.Unix(f.Date, 0), time.Unix(f.Expiration, 0), f.Size, errTxt)
 				}
 			}
 			w.Flush()

@@ -67,10 +67,21 @@ message Rule {
     int32 min_age = 1;
     int32 count = 2;
     repeated File files = 3;
+    Error error = 4;
 }
 
 message File {
     string path = 1;
     int64 date = 2;
     int64 size = 3;
+    int64 expiration = 4;
+    Error error = 5;
+}
+
+enum Error {
+    NO_ERROR = 0;
+    UNKNOWN = 1;
+    OBSOLETE = 2;
+    TOO_SMALL = 3;
+    NO_FILE = 4;
 }
