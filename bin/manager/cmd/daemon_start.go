@@ -33,6 +33,7 @@ import (
 
 	"github.com/agence-webup/backr/manager/notifier/basic"
 	"github.com/agence-webup/backr/manager/process"
+	"github.com/agence-webup/backr/manager/repositories/bolt"
 	"github.com/agence-webup/backr/manager/repositories/inmem"
 	"github.com/agence-webup/backr/manager/repositories/s3"
 	"github.com/rs/zerolog/log"
@@ -57,7 +58,15 @@ to quickly create a Cobra application.`,
 
 		// prepare tools
 		notifier := basic.NewNotifier()
-		projectRepo := inmem.NewProjectRepository()
+
+		// projectRepo := inmem.NewProjectRepository()
+		projectRepo, err := bolt.NewProjectRepository(config.Bolt)
+		if err != nil {
+			log.Error().Str("err", err.Error()).Msg("unable to setup Bolt project repository")
+			os.Exit(1)
+		}
+		defer projectRepo.Close()
+
 		// fileRepo := inmem.NewFileRepository()
 		fileRepo, err := s3.NewFileRepository(config.S3)
 		if err != nil {
