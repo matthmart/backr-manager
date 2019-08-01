@@ -155,7 +155,7 @@ func (e *RuleStateError) Error() string {
 		return e.Reason.String()
 	}
 
-	return "unable to keep file '" + e.File.Path + "': " + e.Reason.String()
+	return "error for '" + e.File.Path + "': " + e.Reason.String()
 }
 
 // RulesByMinAge stores a slice of rules, sorted by min age
