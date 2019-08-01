@@ -22,6 +22,9 @@ func SetupFromViper() {
 			SecretKey: viper.GetString("s3.secret_key"),
 			UseTLS:    viper.GetBool("s3.use_tls"),
 		},
+		Bolt: manager.BoltConfig{
+			Filepath: viper.GetString("bolt.filepath"),
+		},
 	}
 
 	config = c
