@@ -60,8 +60,8 @@ func (project *Project) DebugPrint() {
 		fmt.Printf(" - %v\n", id)
 		for _, f := range rs.Files {
 			errState := "✅"
-			if err, ok := f.Error.(*RuleStateError); ok {
-				switch err.Reason {
+			if f.Error != nil {
+				switch f.Error.Reason {
 				case RuleStateErrorSizeTooSmall:
 					errState = "⚠️ too small"
 				case RuleStateErrorObsolete:
@@ -96,7 +96,7 @@ type RuleState struct {
 	Next  *time.Time
 
 	// global error (when the error is not associated to a specific file)
-	Error error
+	Error *RuleStateError
 }
 
 // Check takes a date (e.g. today) and checks if the backup must be done
@@ -145,9 +145,8 @@ func (r RuleStateErrorType) String() string {
 
 // RuleStateError represents an error on a rule
 type RuleStateError struct {
-	RuleState RuleState
-	File      File
-	Reason    RuleStateErrorType
+	File   File
+	Reason RuleStateErrorType
 }
 
 func (e *RuleStateError) Error() string {
@@ -212,7 +211,7 @@ func (files sortedFilesByDate) Swap(i, j int) {
 type SelectedFile struct {
 	File
 	Expiration time.Time
-	Error      error
+	Error      *RuleStateError
 }
 
 // SelectedFilesByExpirationDateDesc stores a slice of files (associated to a rule state),

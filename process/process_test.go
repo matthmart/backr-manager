@@ -54,9 +54,9 @@ func TestProcessExecution(t *testing.T) {
 
 						t.Run("ruleState must have an error if backup files are expected but no file is available", func(t *testing.T) {
 							if rs.Error != nil || expected.Error != nil {
-								rsError, ok1 := rs.Error.(*manager.RuleStateError)
-								expectedError, ok2 := expected.Error.(*manager.RuleStateError)
-								if ok1 && ok2 {
+								rsError := rs.Error
+								expectedError := expected.Error
+								if rsError != nil && expectedError != nil {
 									if rsError.Reason != expectedError.Reason {
 										t.Errorf("ruleState error is wrong: expected=%v got=%v", expectedError.Reason, rsError.Reason)
 									}
@@ -87,9 +87,9 @@ func TestProcessExecution(t *testing.T) {
 								}
 								// check file error
 								if rsFile.Error != nil || expectedFile.Error != nil {
-									rsFileError, ok1 := rsFile.Error.(*manager.RuleStateError)
-									expectedFileError, ok2 := expectedFile.Error.(*manager.RuleStateError)
-									if ok1 && ok2 {
+									rsFileError := rsFile.Error
+									expectedFileError := expectedFile.Error
+									if rsFileError != nil && expectedFileError != nil {
 										if rsFileError.Reason != expectedFileError.Reason {
 											t.Errorf("wrong fileError reason: expected:%+v got=%+v", expectedFileError.Reason, rsFileError.Reason)
 										}

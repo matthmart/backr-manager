@@ -52,9 +52,9 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) er
 		for _, ruleState := range project.State {
 
 			// check for a global error
-			if err, ok := ruleState.Error.(*manager.RuleStateError); ok {
+			if ruleState.Error != nil {
 				projectErr.Count++
-				projectErr.Reasons[err.Reason] = true
+				projectErr.Reasons[ruleState.Error.Reason] = true
 				projectErr.Level = manager.Critic
 			}
 
@@ -62,11 +62,11 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) er
 
 			files := manager.SelectedFilesSortedByExpirationDateDesc(ruleState.Files)
 			for i, f := range files {
-				if err, ok := f.Error.(*manager.RuleStateError); ok {
+				if f.Error != nil {
 					projectErr.Count++
-					projectErr.Reasons[err.Reason] = true
+					projectErr.Reasons[f.Error.Reason] = true
 					if i == 0 {
-						firstErr = err
+						firstErr = f.Error
 					}
 				}
 			}
@@ -224,8 +224,7 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 	if len(files) == 0 {
 		log.Debug().Caller().Msg("no file available")
 		err := manager.RuleStateError{
-			RuleState: *ruleState,
-			Reason:    manager.RuleStateErrorNoFile,
+			Reason: manager.RuleStateErrorNoFile,
 		}
 		ruleState.Error = &err
 	} else {
@@ -266,7 +265,7 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 			// prepare the expiration date of the file
 			expiration := f.Date.Add(time.Duration(ruleState.Rule.MinAge) * 24 * time.Hour)
 
-			var fileError error
+			var fileError *manager.RuleStateError
 
 			// check the size
 			previousSize := int64(0)
@@ -277,9 +276,8 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 				acceptableSize := int64(float64(previousSize) * 0.5) // 50%
 				if f.Size <= acceptableSize {
 					err := manager.RuleStateError{
-						RuleState: *ruleState,
-						File:      f,
-						Reason:    manager.RuleStateErrorSizeTooSmall,
+						File:   f,
+						Reason: manager.RuleStateErrorSizeTooSmall,
 					}
 					fileError = &err
 					log.Debug().Caller().Int64("previous_size", previousSize).Int64("actual_size", f.Size).Str("path", f.Path).Msg("file is at least 50% smaller than previous backup")
@@ -289,9 +287,8 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 			// check if file is expired
 			if expiration.Before(olderRefDate) {
 				err := manager.RuleStateError{
-					RuleState: *ruleState,
-					File:      f,
-					Reason:    manager.RuleStateErrorObsolete,
+					File:   f,
+					Reason: manager.RuleStateErrorObsolete,
 				}
 				fileError = &err
 				log.Debug().Caller().Time("ref_date", olderRefDate).Time("expiration", expiration).Str("path", f.Path).Msg("file is obsolete")
@@ -341,7 +338,7 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 				log.Debug().Caller().Str("path", f.Path).Msg("Next date not updated: file has an error")
 			}
 
-			if err, ok := fileError.(*manager.RuleStateError); ok && err.Reason == manager.RuleStateErrorSizeTooSmall {
+			if fileError != nil && fileError.Reason == manager.RuleStateErrorSizeTooSmall {
 				// don't update the refDate, trying to find another file to fulfill the needs of the rule
 				log.Debug().Caller().Str("rule_id", string(ruleState.Rule.GetID())).Str("path", f.Path).Msg("file is too small, trying to find another file for the rule")
 			} else {
@@ -406,8 +403,8 @@ func (pm *processManager) getFilesToRemove(project *manager.Project, allFiles []
 	return filesToRemove
 }
 
-func (pm *processManager) canKeepFileForError(err error) bool {
-	if err, ok := err.(*manager.RuleStateError); ok {
+func (pm *processManager) canKeepFileForError(err *manager.RuleStateError) bool {
+	if err != nil {
 		switch err.Reason {
 		case manager.RuleStateErrorSizeTooSmall:
 			return false
