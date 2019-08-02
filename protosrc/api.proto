@@ -7,6 +7,7 @@ service BackrApi {
     rpc GetProject (GetProjectRequest) returns (ProjectResponse);
     rpc CreateProject (CreateProjectRequest) returns (CreateProjectResponse);
     rpc GetFiles (GetFilesRequest) returns (GetFilesResponse);
+    rpc GetFileURL (GetFileURLRequest) returns (GetFileURLResponse);
 }
 
 message GetProjectsRequest {
@@ -53,6 +54,14 @@ message GetFilesRequest {
 
 message GetFilesResponse {
     repeated File files = 1;
+}
+
+message GetFileURLRequest {
+    string filepath = 1;
+}
+
+message GetFileURLResponse {
+    string url = 1;
 }
 
 message Project {

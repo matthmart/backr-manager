@@ -138,6 +138,16 @@ func (srv *server) GetFiles(ctx context.Context, req *proto.GetFilesRequest) (*p
 	}, nil
 }
 
+func (srv *server) GetFileURL(ctx context.Context, req *proto.GetFileURLRequest) (*proto.GetFileURLResponse, error) {
+
+	file, err := srv.FileRepo.GetURL(manager.File{Path: req.Filepath})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "unable to get url: %v", err)
+	}
+
+	return &proto.GetFileURLResponse{Url: file.String()}, nil
+}
+
 func transformToProtoProject(project manager.Project) proto.Project {
 	rules := []*proto.Rule{}
 	for _, r := range project.Rules {

@@ -3,7 +3,9 @@ package s3
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/agence-webup/backr/manager"
 
@@ -110,6 +112,20 @@ func (repo *fileRepository) GetFilenameForFile(file manager.File) (string, error
 
 func (repo *fileRepository) RemoveFile(file manager.File) error {
 	return repo.minioClient.RemoveObject(repo.bucket, file.Path)
+}
+
+func (repo *fileRepository) GetURL(file manager.File) (*url.URL, error) {
+	// Set request parameters for content-disposition.
+	reqParams := make(url.Values)
+	// reqParams.Set("response-content-disposition", "attachment; filename=\"backup.tar.gz\"")
+
+	// Generates a presigned url which expires in a day.
+	presignedURL, err := repo.minioClient.PresignedGetObject(repo.bucket, file.Path, 15*time.Minute, reqParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return presignedURL, nil
 }
 
 func (repo *fileRepository) getFileComponents(file manager.File) ([]string, error) {

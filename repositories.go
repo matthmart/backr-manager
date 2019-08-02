@@ -1,5 +1,7 @@
 package manager
 
+import "net/url"
+
 // ProjectRepository defines methods required
 // to work with projects
 type ProjectRepository interface {
@@ -17,4 +19,5 @@ type FileRepository interface {
 	GetFolderForFile(File) (string, error)
 	GetFilenameForFile(File) (string, error)
 	RemoveFile(File) error
+	GetURL(File) (*url.URL, error)
 }

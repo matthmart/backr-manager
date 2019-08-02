@@ -3,6 +3,7 @@ package inmem
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/agence-webup/backr/manager"
@@ -78,6 +79,10 @@ func (repo *fileRepo) RemoveFile(file manager.File) error {
 	repo.Files = append(repo.Files[:fileIndex], repo.Files[fileIndex+1:]...)
 
 	return nil
+}
+
+func (repo *fileRepo) GetURL(file manager.File) (*url.URL, error) {
+	return nil, nil
 }
 
 func (repo *fileRepo) getFileComponents(file manager.File) ([]string, error) {
