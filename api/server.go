@@ -30,7 +30,7 @@ type server struct {
 }
 
 func (srv *server) GetProjects(ctx context.Context, req *proto.GetProjectsRequest) (*proto.ProjectsListResponse, error) {
-	err := authenticateRequest(ctx, srv.Config)
+	err := srv.authenticateRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (srv *server) GetProjects(ctx context.Context, req *proto.GetProjectsReques
 }
 
 func (srv *server) GetProject(ctx context.Context, req *proto.GetProjectRequest) (*proto.ProjectResponse, error) {
-	err := authenticateRequest(ctx, srv.Config)
+	err := srv.authenticateRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (srv *server) GetProject(ctx context.Context, req *proto.GetProjectRequest)
 }
 
 func (srv *server) CreateProject(ctx context.Context, req *proto.CreateProjectRequest) (*proto.CreateProjectResponse, error) {
-	err := authenticateRequest(ctx, srv.Config)
+	err := srv.authenticateRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (srv *server) CreateProject(ctx context.Context, req *proto.CreateProjectRe
 }
 
 func (srv *server) GetFiles(ctx context.Context, req *proto.GetFilesRequest) (*proto.GetFilesResponse, error) {
-	err := authenticateRequest(ctx, srv.Config)
+	err := srv.authenticateRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (srv *server) GetFiles(ctx context.Context, req *proto.GetFilesRequest) (*p
 }
 
 func (srv *server) GetFileURL(ctx context.Context, req *proto.GetFileURLRequest) (*proto.GetFileURLResponse, error) {
-	err := authenticateRequest(ctx, srv.Config)
+	err := srv.authenticateRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func (srv *server) GetFileURL(ctx context.Context, req *proto.GetFileURLRequest)
 }
 
 func (srv *server) CreateAccount(ctx context.Context, req *proto.CreateAccountRequest) (*proto.AccountResponse, error) {
-	err := authenticateRequest(ctx, srv.Config)
+	err := srv.authenticateRequest(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (srv *server) CreateAccount(ctx context.Context, req *proto.CreateAccountRe
 }
 
 func (srv *server) ListAccounts(ctx context.Context, req *proto.ListAccountsRequest) (*proto.AccountsListResponse, error) {
-	err := authenticateRequest(ctx, srv.Config)
+	err := srv.authenticateRequest(ctx)
 	if err != nil {
 		return nil, err
 	}

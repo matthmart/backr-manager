@@ -5,14 +5,24 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/agence-webup/backr/manager"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-func authenticateRequest(ctx context.Context, authConfig manager.AuthConfig) error {
+func (srv *server) authenticateRequest(ctx context.Context) error {
+
+	accounts, err := srv.AccountRepo.List()
+	if err != nil {
+		log.Info().Err(err).Msg("unable to check for accounts count")
+	} else if len(accounts) == 0 {
+		// if no account is available, consider authentication is successful
+		log.Warn().Msg("API is not secured: an account must be created")
+		return nil
+	}
+
 	auth, err := extractHeader(ctx, "authorization")
 	if err != nil {
 		return status.Error(codes.Unauthenticated, `missing "Authorization" header`)
@@ -31,7 +41,7 @@ func authenticateRequest(ctx context.Context, authConfig manager.AuthConfig) err
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(authConfig.JWTSecret), nil
+		return []byte(srv.Config.JWTSecret), nil
 	})
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, "unable to parse token: %v", err)
