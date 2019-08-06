@@ -16,6 +16,7 @@ service BackrApi {
     rpc CreateAccount (CreateAccountRequest) returns (AccountResponse);
     rpc ListAccounts (ListAccountsRequest) returns (AccountsListResponse);
     rpc AuthenticateAccount (AuthenticateAccountRequest) returns (AuthenticateAccountResponse);
+    rpc ChangeAccountPassword (ChangeAccountPasswordRequest) returns (AccountResponse);
 }
 
 // RPC requests & responses
@@ -94,6 +95,10 @@ message AuthenticateAccountRequest {
 }
 message AuthenticateAccountResponse {
     string token = 1;
+}
+
+message ChangeAccountPasswordRequest {
+    string username = 1;
 }
 
 // entities

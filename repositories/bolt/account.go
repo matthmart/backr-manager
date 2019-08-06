@@ -102,7 +102,7 @@ func (repo *accountRepository) Create(username string) (string, error) {
 			return fmt.Errorf("unable to create bolt bucket: %v", err)
 		}
 
-		// serialize project
+		// serialize account
 		buf := bytes.Buffer{}
 		err = gob.NewEncoder(&buf).Encode(account)
 		if err != nil {
@@ -172,5 +172,47 @@ func (repo *accountRepository) Authenticate(username string, password string) er
 }
 
 func (repo *accountRepository) ChangePassword(username string) (string, error) {
-	panic("not implemented")
+
+	account, err := repo.Get(username)
+	if err != nil {
+		return "", fmt.Errorf("unable to get account: %v", err)
+	}
+	if account == nil {
+		return "", fmt.Errorf("account not found")
+	}
+
+	pwd, err := bcrypt.GeneratePassword()
+	if err != nil {
+		return "", fmt.Errorf("unable to generate password: %v", err)
+	}
+
+	account.HashedPassword = pwd.Hashed
+
+	err = repo.db.Update(func(tx *bolt.Tx) error {
+		// get or create the bucket
+		b := tx.Bucket(accountBucket)
+		if b == nil {
+			return fmt.Errorf("unable to get bucket")
+		}
+
+		// serialize project
+		buf := bytes.Buffer{}
+		err = gob.NewEncoder(&buf).Encode(account)
+		if err != nil {
+			return fmt.Errorf("unable to serialize gob data: %v", err)
+		}
+
+		// put it into the bucket
+		err = b.Put([]byte(username), buf.Bytes())
+		if err != nil {
+			return fmt.Errorf("unable to put data in bucket: %v", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return pwd.Plain, nil
 }

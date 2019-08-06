@@ -246,6 +246,24 @@ func (srv *server) AuthenticateAccount(ctx context.Context, req *proto.Authentic
 	return &proto.AuthenticateAccountResponse{Token: tokenString}, nil
 }
 
+func (srv *server) ChangeAccountPassword(ctx context.Context, req *proto.ChangeAccountPasswordRequest) (*proto.AccountResponse, error) {
+	err := srv.authenticateRequest(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	password, err := srv.AccountRepo.ChangePassword(req.Username)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "unable to update password: %v", err)
+	}
+
+	return &proto.AccountResponse{
+		Account:  &proto.Account{Username: req.Username},
+		Password: password,
+	}, nil
+
+}
+
 func transformToProtoProject(project manager.Project) proto.Project {
 	rules := []*proto.Rule{}
 	for _, r := range project.Rules {
