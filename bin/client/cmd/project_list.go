@@ -44,7 +44,7 @@ var listCmd = &cobra.Command{
 
 		conn, err := grpcConnect()
 		if err != nil {
-			fmt.Println("unable to dial to addr")
+			fmt.Printf("unable to dial to addr: %v\n", err)
 			os.Exit(1)
 		}
 		defer conn.Close()
@@ -57,7 +57,8 @@ var listCmd = &cobra.Command{
 		req := &proto.GetProjectsRequest{}
 		resp, err := client.GetProjects(ctx, req)
 		if err != nil {
-			fmt.Printf("error: %v", err)
+			fmt.Printf("error: %v\n", err)
+			os.Exit(1)
 		}
 
 		if len(resp.Projects) == 0 {
