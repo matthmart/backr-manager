@@ -253,6 +253,9 @@ func transformToProtoProject(project manager.Project) proto.Project {
 
 		if state, ok := project.State[r.GetID()]; ok {
 			rule.Error = transformToProtoError(state.Error)
+			if state.Next != nil {
+				rule.NextDate = state.Next.Unix()
+			}
 
 			files := []*proto.File{}
 			for _, f := range state.Files {

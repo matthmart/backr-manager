@@ -91,7 +91,7 @@ var getCmd = &cobra.Command{
 		if showFiles || showAll {
 			w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
 			for _, r := range p.Rules {
-				fmt.Printf("\033[1;36m%s\033[0m\n", fmt.Sprintf("%d.%d", r.Count, r.MinAge))
+				fmt.Printf("\033[1;36m%s\033[0m\n", fmt.Sprintf("%d.%d (next: %v)", r.Count, r.MinAge, time.Unix(r.NextDate, 0)))
 				if r.Error > 0 {
 					fmt.Printf("%v %v\n", fmt.Sprintf(ErrorColor, "error:"), r.Error.String())
 				}
