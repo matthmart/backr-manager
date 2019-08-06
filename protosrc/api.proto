@@ -3,12 +3,22 @@ syntax = "proto3";
 option go_package = "proto";
 
 service BackrApi {
+    // projects
     rpc GetProjects (GetProjectsRequest) returns (ProjectsListResponse);
     rpc GetProject (GetProjectRequest) returns (ProjectResponse);
     rpc CreateProject (CreateProjectRequest) returns (CreateProjectResponse);
+
+    // files
     rpc GetFiles (GetFilesRequest) returns (GetFilesResponse);
     rpc GetFileURL (GetFileURLRequest) returns (GetFileURLResponse);
+    
+    // account
+    rpc CreateAccount (CreateAccountRequest) returns (AccountResponse);
+    rpc ListAccounts (ListAccountsRequest) returns (AccountsListResponse);
+    rpc AuthenticateAccount (AuthenticateAccountRequest) returns (AuthenticateAccountResponse);
 }
+
+// RPC requests & responses
 
 message GetProjectsRequest {
     enum OrderBy {
@@ -34,7 +44,6 @@ message CreateProjectRequest {
     string name = 1;
     repeated Rule rules = 2;
 }
-
 message CreateProjectResponse {
     Project project = 1;
 }
@@ -51,7 +60,6 @@ message GetFilesRequest {
     string project_name = 1;
     int32 limit = 2;
 }
-
 message GetFilesResponse {
     repeated File files = 1;
 }
@@ -59,10 +67,36 @@ message GetFilesResponse {
 message GetFileURLRequest {
     string filepath = 1;
 }
-
 message GetFileURLResponse {
     string url = 1;
 }
+
+message CreateAccountRequest {
+    string username = 1;
+}
+
+message AccountResponse {
+    Account account = 1;
+    string password = 2;
+}
+
+message ListAccountsRequest {
+    
+}
+
+message AccountsListResponse {
+    repeated Account accounts = 1;
+}
+
+message AuthenticateAccountRequest {
+    string username = 1;
+    string password = 2;
+}
+message AuthenticateAccountResponse {
+    string token = 1;
+}
+
+// entities
 
 message Project {
     string name = 1;
@@ -75,8 +109,11 @@ message Project {
 message Rule {
     int32 min_age = 1;
     int32 count = 2;
+
+    // state (readonly)
     repeated File files = 3;
-    Error error = 4;
+    int64 next_date = 4;
+    Error error = 5;
 }
 
 message File {
@@ -93,4 +130,8 @@ enum Error {
     OBSOLETE = 2;
     TOO_SMALL = 3;
     NO_FILE = 4;
+}
+
+message Account {
+    string username = 1;
 }

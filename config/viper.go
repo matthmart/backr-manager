@@ -25,6 +25,9 @@ func SetupFromViper() {
 		Bolt: manager.BoltConfig{
 			Filepath: viper.GetString("bolt.filepath"),
 		},
+		Auth: manager.AuthConfig{
+			JWTSecret: viper.GetString("auth.jwt_secret"),
+		},
 	}
 
 	config = c

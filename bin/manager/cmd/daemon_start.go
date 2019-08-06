@@ -165,7 +165,7 @@ func startProcess(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.P
 	}()
 }
 
-func startAPI(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.ProjectRepository, fileRepo manager.FileRepository) {
+func startAPI(ctx context.Context, wg *sync.WaitGroup, config manager.Config, projectRepo manager.ProjectRepository, fileRepo manager.FileRepository, accountRepo manager.AccountRepository) {
 
 	wg.Add(1)
 
@@ -176,7 +176,7 @@ func startAPI(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.Proje
 		log.Fatal().Str("addr", addr).Err(err).Msg("grpc: failed to listen on addr")
 	}
 
-	backrSrv := api.NewServer(projectRepo, fileRepo)
+	backrSrv := api.NewServer(projectRepo, fileRepo, accountRepo, config.Auth)
 	srv := grpc.NewServer()
 	proto.RegisterBackrApiServer(srv, backrSrv)
 
