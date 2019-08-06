@@ -206,6 +206,8 @@ func (pm *processManager) processForProject(project *manager.Project, filesByFol
 
 		// save the state after removal
 		project.RemoveFilesFromState(filesToRemove)
+		// save project & state
+		pm.projectRepo.Save(*project)
 	}
 
 	// fmt.Println("")
