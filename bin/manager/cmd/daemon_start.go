@@ -69,6 +69,7 @@ to quickly create a Cobra application.`,
 		// prepare tools & repositories
 		notifier := basic.NewNotifier()
 		projectRepo := bolt.NewProjectRepository(db)
+		accountRepo := bolt.NewAccountRepository(db)
 		fileRepo, err := s3.NewFileRepository(config.S3)
 		if err != nil {
 			log.Error().Str("err", err.Error()).Msg("unable to setup S3 file repository")
@@ -90,7 +91,7 @@ to quickly create a Cobra application.`,
 
 		// each goroutine must increment WaitGroup counter
 		startProcess(ctx, &wg, projectRepo, fileRepo, notifier)
-		startAPI(ctx, &wg, projectRepo, fileRepo)
+		startAPI(ctx, &wg, config, projectRepo, fileRepo, accountRepo)
 
 		// prepare chan for listening to SIGINT signal
 		sigint := make(chan os.Signal)

@@ -240,3 +240,9 @@ func (files selectedFilesByExpirationDate) Less(i, j int) bool {
 func (files selectedFilesByExpirationDate) Swap(i, j int) {
 	files[i], files[j] = files[j], files[i]
 }
+
+// Account represents a user account that can manage projects & files
+type Account struct {
+	Username       string
+	HashedPassword string
+}

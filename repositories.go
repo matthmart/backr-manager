@@ -20,3 +20,15 @@ type FileRepository interface {
 	RemoveFile(File) error
 	GetURL(File) (*url.URL, error)
 }
+
+// AccountRepository abstracts interactions with
+// user accounts allowed to manage projects & files
+type AccountRepository interface {
+	List() ([]Account, error)
+	Get(username string) (*Account, error)
+	// Create must return an automatically generated password for the created user
+	Create(username string) (string, error)
+	Delete(username string) error
+	ChangePassword(username string) (string, error)
+	Authenticate(username, password string) error
+}
