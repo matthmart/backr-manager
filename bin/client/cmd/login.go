@@ -24,32 +24,45 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
-	"text/tabwriter"
+	"path/filepath"
 	"time"
 
 	"github.com/agence-webup/backr/manager/proto"
+	"github.com/chzyer/readline"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
 
-// getCmd represents the get command
-var getCmd = &cobra.Command{
-	Use:   "get [PROJECT_NAME]",
-	Short: "Get infos on a project",
+// loginCmd represents the login command
+var loginCmd = &cobra.Command{
+	Use:   "login",
+	Short: "Login using username and password, and save token into a file in $HOME directory (.backr_auth)",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			fmt.Println("You must provide a project name.")
+
+		rl, err := readline.New("username: ")
+		if err != nil {
+			panic(err)
+		}
+		defer rl.Close()
+
+		username, err := rl.Readline()
+		if err != nil && err != io.EOF {
+			fmt.Printf("unable to get username: %v", err)
 			os.Exit(1)
 		}
-		if len(args) > 1 {
-			fmt.Println("You must provide only one project name.")
+
+		password, err := rl.ReadPassword("password: ")
+		if err != nil {
+			fmt.Printf("unable to get password: %v", err)
 			os.Exit(1)
 		}
 
 		conn, err := grpcConnect()
 		if err != nil {
-			fmt.Println("unable to dial to addr")
+			fmt.Printf("unable to dial to addr: %v\n", err)
 			os.Exit(1)
 		}
 		defer conn.Close()
@@ -59,71 +72,43 @@ var getCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		req := &proto.GetProjectRequest{Name: args[0]}
+		req := &proto.AuthenticateAccountRequest{Username: username, Password: string(password)}
+		resp, err := client.AuthenticateAccount(ctx, req)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
 
-		resp, err := client.GetProject(ctx, req)
+		home, err := homedir.Dir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		p := resp.Project
-
-		showAll, err := cmd.Flags().GetBool("all")
+		cacheFilepath := filepath.Join(home, ".backr_auth")
+		cacheFile, err := os.OpenFile(cacheFilepath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		defer cacheFile.Close()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		if showAll {
-			w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
-			fmt.Fprintf(w, "%v\t%v\t\n", "PROJECT NAME", "CREATED AT")
-			fmt.Fprintf(w, "%v\t%v\t\n", p.Name, time.Unix(p.CreatedAt, 0))
-			w.Flush()
+			fmt.Println("unable to save token into file")
 			fmt.Println("")
+			fmt.Println("token:", resp.Token)
 		}
 
-		showFiles, err := cmd.Flags().GetBool("files")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		if showFiles || showAll {
-			w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
-			for _, r := range p.Rules {
-				fmt.Printf("\033[1;36m%s\033[0m\n", fmt.Sprintf("%d.%d", r.Count, r.MinAge))
-				if r.Error > 0 {
-					fmt.Printf("%v %v\n", fmt.Sprintf(ErrorColor, "error:"), r.Error.String())
-				}
-				fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t\n", "PATH", "DATE", "EXPIRE AT", "SIZE", "ERROR")
-				for _, f := range r.Files {
-					errTxt := "-"
-					if f.Error > 0 {
-						errTxt = fmt.Sprintf(ErrorColor, f.Error.String())
-					}
-					fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t\n", f.Path, time.Unix(f.Date, 0), time.Unix(f.Expiration, 0), f.Size, errTxt)
-				}
-			}
-			w.Flush()
-			fmt.Println("")
-		}
-
+		fmt.Fprint(cacheFile, resp.Token)
+		fmt.Println("token saved in", cacheFilepath)
 	},
 }
 
 func init() {
-	projectsCmd.AddCommand(getCmd)
+	rootCmd.AddCommand(loginCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// getCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// loginCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
-	getCmd.Flags().BoolP("files", "f", true, "Display files associated to project")
-	getCmd.Flags().BoolP("all", "a", false, "Display all informations associated to project")
+	// loginCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

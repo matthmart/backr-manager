@@ -23,7 +23,10 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -95,5 +98,22 @@ func initConfig() {
 
 func grpcConnect() (*grpc.ClientConn, error) {
 	addr := "127.0.0.1:3000"
-	return grpc.Dial(addr, grpc.WithInsecure())
+
+	// Find home directory.
+	home, err := homedir.Dir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	// get token file
+	token, err := ioutil.ReadFile(filepath.Join(home, ".backr_auth"))
+	if err != nil {
+		fmt.Println("unable to get auth token from file ~/.backr_auth")
+		fmt.Println("You must authenticate using `backrctl login`")
+		return nil, err
+	}
+
+	cleanToken := strings.ReplaceAll(string(token), "\n", "")
+
+	return grpc.Dial(addr, grpc.WithInsecure(), grpc.WithPerRPCCredentials(tokenAuth{token: cleanToken}))
 }
