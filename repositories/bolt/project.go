@@ -15,24 +15,15 @@ var projectBucket = []byte("projects")
 // NewProjectRepository returns an instance of
 // a Project Repository backed by a Bolt database.
 // Close() should be called to terminate gracefully
-func NewProjectRepository(config manager.BoltConfig) (manager.ProjectRepository, error) {
-	db, err := bolt.Open(config.Filepath, 0666, &bolt.Options{Timeout: 1 * time.Second})
-	if err != nil {
-		return nil, fmt.Errorf("unable to open BoltDB file: %v", err.Error())
-	}
-
+func NewProjectRepository(db *bolt.DB) manager.ProjectRepository {
 	r := projectRepo{
 		db: db,
 	}
-	return &r, nil
+	return &r
 }
 
 type projectRepo struct {
 	db *bolt.DB
-}
-
-func (repo *projectRepo) Close() error {
-	return repo.db.Close()
 }
 
 func (repo *projectRepo) GetAll() ([]manager.Project, error) {

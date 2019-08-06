@@ -46,7 +46,3 @@ func (repo *projectRepo) Save(project manager.Project) error {
 
 	return nil
 }
-
-func (repo *projectRepo) Close() error {
-	return nil
-}

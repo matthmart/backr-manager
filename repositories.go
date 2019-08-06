@@ -8,7 +8,6 @@ type ProjectRepository interface {
 	GetAll() ([]Project, error)
 	GetByName(name string) (*Project, error)
 	Save(project Project) error
-	Close() error
 }
 
 // FileRepository abstracts interactions

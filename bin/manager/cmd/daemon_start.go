@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -38,6 +39,7 @@ import (
 	"github.com/agence-webup/backr/manager/repositories/s3"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"go.etcd.io/bbolt"
 )
 
 // startCmd represents the start command
@@ -56,18 +58,17 @@ to quickly create a Cobra application.`,
 		log.Debug().Msg("fetching config")
 		config := config.Get()
 
-		// prepare tools
-		notifier := basic.NewNotifier()
-
-		// projectRepo := inmem.NewProjectRepository()
-		projectRepo, err := bolt.NewProjectRepository(config.Bolt)
+		// open a Bolt DB
+		db, err := bbolt.Open(config.Bolt.Filepath, 0666, &bbolt.Options{Timeout: 1 * time.Second})
 		if err != nil {
-			log.Error().Str("err", err.Error()).Msg("unable to setup Bolt project repository")
+			fmt.Printf("unable to open BoltDB file: %v\n", err.Error())
 			os.Exit(1)
 		}
-		defer projectRepo.Close()
+		defer db.Close()
 
-		// fileRepo := inmem.NewFileRepository()
+		// prepare tools & repositories
+		notifier := basic.NewNotifier()
+		projectRepo := bolt.NewProjectRepository(db)
 		fileRepo, err := s3.NewFileRepository(config.S3)
 		if err != nil {
 			log.Error().Str("err", err.Error()).Msg("unable to setup S3 file repository")
