@@ -324,8 +324,8 @@ func (pm *processManager) selectFilesToBackup(ruleState *manager.RuleState, file
 			// update Next date
 			if fileError == nil {
 				unit := 24 * time.Hour
-				// unit := 1 * time.Minute
-				next := f.Date.Add(time.Duration(ruleState.Rule.MinAge) * unit)
+				tolerance := 2 * time.Hour
+				next := f.Date.Add(time.Duration(ruleState.Rule.MinAge)*unit + tolerance)
 				if ruleState.Next == nil || next.After(*ruleState.Next) {
 					l := log.Debug().Caller()
 					if ruleState.Next != nil {

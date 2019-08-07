@@ -45,8 +45,8 @@ func TestProcessExecution(t *testing.T) {
 							}
 						})
 
-						// next date should be refDate + 24h when not already set (no initial state) OR should be the latest selected file date, added by (rule.MinAge * 24 hours)
-						t.Run("next date should be refDate + 24h when not already set OR the latest selected file date, added by (rule.MinAge * 24 hours)", func(t *testing.T) {
+						// next date should be refDate + 24h when not already set (no initial state) OR should be the latest selected file date, added by (rule.MinAge * 24 hours + tolerance(2 hours))
+						t.Run("next date should be refDate + 24h when not already set OR the latest selected file date, added by (rule.MinAge * 24 hours + tolerance(2 hours))", func(t *testing.T) {
 							if rs.Next != nil && !expected.Next.Equal(*rs.Next) {
 								t.Errorf("next date is wrong: expected=%v got=%v", expected.Next, rs.Next)
 							}
@@ -187,7 +187,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 26, 5, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 26, 7, 0, 0, 0, time.Local)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -294,8 +294,8 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext1 := time.Date(2019, 03, 26, 5, 0, 0, 0, time.Local)
-					expectedNext2 := time.Date(2019, 04, 9, 6, 0, 0, 0, time.Local) // daylight saving adds 1 hour
+					expectedNext1 := time.Date(2019, 03, 26, 7, 0, 0, 0, time.Local)
+					expectedNext2 := time.Date(2019, 04, 9, 8, 0, 0, 0, time.Local) // daylight saving adds 1 hour
 					expectedState[rule1.GetID()] = manager.RuleState{
 						Rule: rule1,
 						Next: &expectedNext1,
@@ -366,7 +366,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 26, 4, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 26, 6, 0, 0, 0, time.Local)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -449,7 +449,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 27, 5, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 27, 7, 0, 0, 0, time.Local)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -592,7 +592,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 31, 6, 0, 0, 0, time.Local) // daylight saving adds 1 hour
+					expectedNext := time.Date(2019, 03, 31, 8, 0, 0, 0, time.Local) // daylight saving adds 1 hour
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -705,7 +705,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 26, 5, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 26, 7, 0, 0, 0, time.Local)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
