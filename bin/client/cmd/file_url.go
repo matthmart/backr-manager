@@ -29,6 +29,7 @@ import (
 
 	"github.com/agence-webup/backr/manager/proto"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // fileURLCmd uses to fetch file URL
@@ -38,7 +39,8 @@ var fileURLCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		conn, err := grpcConnect()
+		addr := viper.GetString("endpoint")
+		conn, err := grpcConnect(addr)
 		if err != nil {
 			fmt.Println("unable to dial to addr")
 			os.Exit(1)

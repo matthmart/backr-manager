@@ -31,6 +31,7 @@ import (
 
 	"github.com/agence-webup/backr/manager/proto"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // createCmd represents the create command
@@ -70,7 +71,8 @@ var createCmd = &cobra.Command{
 			}
 		}
 
-		conn, err := grpcConnect()
+		addr := viper.GetString("endpoint")
+		conn, err := grpcConnect(addr)
 		if err != nil {
 			fmt.Println("unable to dial to addr")
 			os.Exit(1)

@@ -33,6 +33,7 @@ import (
 	"github.com/chzyer/readline"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // loginCmd represents the login command
@@ -60,7 +61,8 @@ var loginCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		conn, err := grpcConnect()
+		addr := viper.GetString("endpoint")
+		conn, err := grpcConnect(addr)
 		if err != nil {
 			fmt.Printf("unable to dial to addr: %v\n", err)
 			os.Exit(1)

@@ -30,6 +30,7 @@ import (
 
 	"github.com/agence-webup/backr/manager/proto"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // listCmd represents the list command
@@ -40,7 +41,8 @@ var fileListCmd = &cobra.Command{
 	Aliases: []string{"ls"},
 	Run: func(cmd *cobra.Command, args []string) {
 
-		conn, err := grpcConnect()
+		addr := viper.GetString("endpoint")
+		conn, err := grpcConnect(addr)
 		if err != nil {
 			fmt.Println("unable to dial to addr")
 			os.Exit(1)

@@ -29,6 +29,7 @@ import (
 
 	"github.com/agence-webup/backr/manager/proto"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // passwordCmd represents the password command
@@ -44,7 +45,8 @@ var passwordCmd = &cobra.Command{
 		}
 		username := args[0]
 
-		conn, err := grpcConnect()
+		addr := viper.GetString("endpoint")
+		conn, err := grpcConnect(addr)
 		if err != nil {
 			fmt.Printf("unable to dial to addr: %v\n", err)
 			os.Exit(1)
