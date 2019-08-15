@@ -7,3 +7,6 @@ use_tls =  false
 
 [bolt]
 filepath = "bolt.db"
+
+[auth]
+jwt_secret = "a_very_secure_key"
