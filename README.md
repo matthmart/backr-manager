@@ -1,5 +1,7 @@
 # Backr Manager
 
+[![Build Status](https://travis-ci.org/matthmart/backr-manager.svg?branch=master)](https://travis-ci.org/matthmart/backr-manager)
+
 Backr Manager is a tool created to manage backup files stored into an object storage solution. 
 
 **Table of content**
