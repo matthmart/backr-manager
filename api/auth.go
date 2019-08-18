@@ -14,6 +14,7 @@ import (
 
 func (srv *server) authenticateRequest(ctx context.Context) error {
 
+	// fetch all user accounts
 	accounts, err := srv.AccountRepo.List()
 	if err != nil {
 		log.Info().Err(err).Msg("unable to check for accounts count")
@@ -23,18 +24,22 @@ func (srv *server) authenticateRequest(ctx context.Context) error {
 		return nil
 	}
 
+	// extract Authorization header
 	auth, err := extractHeader(ctx, "authorization")
 	if err != nil {
 		return status.Error(codes.Unauthenticated, `missing "Authorization" header`)
 	}
 
+	// check for Bearer prefix
 	const prefix = "Bearer "
 	if !strings.HasPrefix(auth, prefix) {
 		return status.Error(codes.Unauthenticated, `missing "Bearer " prefix in "Authorization" header`)
 	}
 
+	// extract the token
 	token := strings.TrimPrefix(auth, prefix)
 
+	// parse the JWT token
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// validate the alg
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -47,6 +52,7 @@ func (srv *server) authenticateRequest(ctx context.Context) error {
 		return status.Errorf(codes.Unauthenticated, "unable to parse token: %v", err)
 	}
 
+	// check if the token is valid
 	if _, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
 		return nil
 	}

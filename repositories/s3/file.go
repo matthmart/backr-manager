@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// NewFileRepository returns an implementation of FileRepository using an S3 object storage
 func NewFileRepository(config manager.S3Config) (manager.FileRepository, error) {
 	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseTLS)
 	if err != nil {
@@ -117,7 +118,6 @@ func (repo *fileRepository) RemoveFile(file manager.File) error {
 func (repo *fileRepository) GetURL(file manager.File) (*url.URL, error) {
 	// Set request parameters for content-disposition.
 	reqParams := make(url.Values)
-	// reqParams.Set("response-content-disposition", "attachment; filename=\"backup.tar.gz\"")
 
 	// Generates a presigned url which expires in a day.
 	presignedURL, err := repo.minioClient.PresignedGetObject(repo.bucket, file.Path, 15*time.Minute, reqParams)
