@@ -148,17 +148,17 @@ type processTest struct {
 func getProcessTestCases() []processTest {
 	return []processTest{
 		func() processTest {
-			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{
-				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 23, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.Local), Size: 300},
+				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 23, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.UTC), Size: 300},
 			}
 
 			initialState := manager.ProjectState{}
@@ -187,7 +187,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 26, 7, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 26, 7, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -209,10 +209,10 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{
-				manager.File{Path: "project2/file1.tar.gz", Date: time.Date(2019, 03, 23, 5, 0, 0, 0, time.Local), Size: 300},
+				manager.File{Path: "project2/file1.tar.gz", Date: time.Date(2019, 03, 23, 5, 0, 0, 0, time.UTC), Size: 300},
 			}
 
 			projects := []manager.Project{
@@ -233,7 +233,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 26, 8, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 26, 8, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -250,18 +250,18 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.UTC)
 			rule1 := manager.Rule{Count: 3, MinAge: 1}
 			rule2 := manager.Rule{Count: 2, MinAge: 15}
 			files := []manager.File{
-				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 23, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.Local), Size: 300},
+				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 23, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.UTC), Size: 300},
 			}
 
 			initialState := manager.ProjectState{}
@@ -294,8 +294,8 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext1 := time.Date(2019, 03, 26, 7, 0, 0, 0, time.Local)
-					expectedNext2 := time.Date(2019, 04, 9, 8, 0, 0, 0, time.Local) // daylight saving adds 1 hour
+					expectedNext1 := time.Date(2019, 03, 26, 7, 0, 0, 0, time.UTC)
+					expectedNext2 := time.Date(2019, 04, 9, 7, 0, 0, 0, time.UTC)
 					expectedState[rule1.GetID()] = manager.RuleState{
 						Rule: rule1,
 						Next: &expectedNext1,
@@ -324,18 +324,18 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{
-				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 21, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 25, 4, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file8.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.Local), Size: 5},
+				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 21, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 25, 4, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file8.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.UTC), Size: 5},
 			}
 
 			initialState := manager.ProjectState{}
@@ -366,7 +366,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 26, 6, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 26, 6, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -397,23 +397,23 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 03, 26, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 26, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{
-				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 21, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 25, 4, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file8.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.Local), Size: 5},
-				manager.File{Path: "project1/file9.tar.gz", Date: time.Date(2019, 03, 26, 5, 0, 0, 0, time.Local), Size: 310},
+				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 21, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 25, 4, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file8.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.UTC), Size: 5},
+				manager.File{Path: "project1/file9.tar.gz", Date: time.Date(2019, 03, 26, 5, 0, 0, 0, time.UTC), Size: 310},
 			}
 
 			initialState := manager.ProjectState{}
-			initialNext := time.Date(2019, 03, 26, 4, 0, 0, 0, time.Local)
+			initialNext := time.Date(2019, 03, 26, 4, 0, 0, 0, time.UTC)
 			initialState[rule.GetID()] = manager.RuleState{
 				Rule: rule,
 				Next: &initialNext,
@@ -449,7 +449,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 27, 7, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 27, 7, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -477,17 +477,17 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 04, 25, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 04, 25, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{
-				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 21, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 24, 7, 34, 2, 0, time.Local), Size: 300},
+				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 20, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 21, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 3, 12, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 24, 3, 40, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file4.tar.gz", Date: time.Date(2019, 03, 24, 4, 23, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file5.tar.gz", Date: time.Date(2019, 03, 24, 5, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file6.tar.gz", Date: time.Date(2019, 03, 24, 6, 34, 2, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file7.tar.gz", Date: time.Date(2019, 03, 24, 7, 34, 2, 0, time.UTC), Size: 300},
 			}
 
 			initialState := manager.ProjectState{}
@@ -525,7 +525,7 @@ func getProcessTestCases() []processTest {
 					expectedState := manager.ProjectState{}
 					// files are obsolete, so the Next date should not be updated by the date of an old file
 					// so the current Next date should remain the same
-					expectedNext := time.Date(2019, 04, 24, 8, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 04, 24, 8, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -552,17 +552,17 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 03, 30, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 30, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{
-				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 22, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 23, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 5, 0, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 30, 5, 0, 0, 0, time.Local), Size: 300},
+				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 22, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 23, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 24, 5, 0, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file3.tar.gz", Date: time.Date(2019, 03, 30, 5, 0, 0, 0, time.UTC), Size: 300},
 			}
 
 			initialState := manager.ProjectState{}
-			initialNext := time.Date(2019, 03, 25, 5, 0, 0, 0, time.Local)
+			initialNext := time.Date(2019, 03, 25, 5, 0, 0, 0, time.UTC)
 			initialState[rule.GetID()] = manager.RuleState{
 				Rule: rule,
 				Next: &initialNext,
@@ -592,7 +592,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 31, 8, 0, 0, 0, time.Local) // daylight saving adds 1 hour
+					expectedNext := time.Date(2019, 03, 31, 7, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -619,7 +619,7 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{}
 
@@ -672,10 +672,10 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{
-				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.Local), Size: 300},
+				manager.File{Path: "project1/file0.tar.gz", Date: time.Date(2019, 03, 25, 5, 0, 0, 0, time.UTC), Size: 300},
 			}
 
 			initialState := manager.ProjectState{}
@@ -705,7 +705,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 26, 7, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 26, 7, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
@@ -725,11 +725,11 @@ func getProcessTestCases() []processTest {
 			}
 		}(),
 		func() processTest {
-			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.Local)
+			refDate := time.Date(2019, 03, 25, 8, 0, 0, 0, time.UTC)
 			rule := manager.Rule{Count: 3, MinAge: 1}
 			files := []manager.File{
-				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 25, 7, 51, 0, 0, time.Local), Size: 300},
-				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 25, 7, 54, 0, 0, time.Local), Size: 300},
+				manager.File{Path: "project1/file1.tar.gz", Date: time.Date(2019, 03, 25, 7, 51, 0, 0, time.UTC), Size: 300},
+				manager.File{Path: "project1/file2.tar.gz", Date: time.Date(2019, 03, 25, 7, 54, 0, 0, time.UTC), Size: 300},
 			}
 
 			projects := []manager.Project{
@@ -750,7 +750,7 @@ func getProcessTestCases() []processTest {
 				Notifier:          newTestNotifier(),
 				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
 					expectedState := manager.ProjectState{}
-					expectedNext := time.Date(2019, 03, 26, 8, 0, 0, 0, time.Local)
+					expectedNext := time.Date(2019, 03, 26, 8, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
 						Rule: rule,
 						Next: &expectedNext,
