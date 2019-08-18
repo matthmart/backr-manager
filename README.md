@@ -154,6 +154,13 @@ $ backrctl file url project1/file12.tar.gz
 <a very long URL>
 ```
 
+# Roadmap
+
+The tool is still missing some important features:
+
+- a true notifier/alert system. The first one will use Slack as channel.
+- add more unit tests
+
 # License
 
 MIT
