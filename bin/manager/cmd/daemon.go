@@ -15,34 +15,66 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/agence-webup/backr/manager/config"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // daemonCmd represents the daemon command
 var daemonCmd = &cobra.Command{
 	Use:   "daemon",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Run: func(cmd *cobra.Command, args []string) {
-	// 	fmt.Println("daemon called")
-	// },
+	Short: "",
+	Long:  ``,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// prepare config
+		initConfig()
+	},
 }
 
 func init() {
 	rootCmd.AddCommand(daemonCmd)
 
 	// Here you will define your flags and configuration settings.
+	// Cobra supports persistent flags, which, if defined here,
+	// will be global for your application.
+	daemonCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.backr_manager)")
+}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// daemonCmd.PersistentFlags().String("foo", "", "A help for foo")
+// initConfig reads in config file and ENV variables if set.
+func initConfig() {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Find home directory.
+		home, err := homedir.Dir()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// daemonCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+		// Search config in home directory with name ".backr_manager" (without extension).
+		viper.AddConfigPath(home)
+		viper.AddConfigPath("/etc/backr-manager")
+		viper.AddConfigPath(".")
+		viper.SetConfigName("config")
+	}
+
+	viper.AutomaticEnv() // read in environment variables that match
+
+	// If a config file is found, read it in.
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Println("viper read config error:", err)
+		return
+	}
+
+	// setup config
+	config.SetupFromViper()
+
+	fmt.Println("Using config file:", viper.ConfigFileUsed())
 }
