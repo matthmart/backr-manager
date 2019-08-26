@@ -35,7 +35,6 @@ import (
 	"github.com/agence-webup/backr/manager/notifier/basic"
 	"github.com/agence-webup/backr/manager/process"
 	"github.com/agence-webup/backr/manager/repositories/bolt"
-	"github.com/agence-webup/backr/manager/repositories/inmem"
 	"github.com/agence-webup/backr/manager/repositories/s3"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -46,12 +45,7 @@ import (
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the daemon managing files lifecycle",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// configuration
@@ -76,16 +70,7 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		// simulate files
-		// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test1.tar.gz", Size: 450, Date: time.Date(2018, 12, 1, 5, 0, 0, 0, time.Local)})
-		// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test2.tar.gz", Size: 455, Date: time.Date(2018, 12, 2, 5, 0, 0, 0, time.Local)})
-
-		// done := make(chan int, 1)
-
-		// // prepare chan for listening to SIGINT signal
-		// sigint := make(chan os.Signal)
-		// signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
-
+		// prepare a context to allow cancelling of the 2 goroutines
 		ctx, cancel := context.WithCancel(context.Background())
 		wg := sync.WaitGroup{}
 
@@ -111,16 +96,6 @@ to quickly create a Cobra application.`,
 
 func init() {
 	daemonCmd.AddCommand(startCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// startCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func startProcess(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.ProjectRepository, fileRepo manager.FileRepository, notifier manager.Notifier) {
@@ -182,10 +157,6 @@ func startAPI(ctx context.Context, wg *sync.WaitGroup, config manager.Config, pr
 
 	log.Debug().Str("addr", addr).Msg("API started")
 
-	// http.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
-	// 	w.Write([]byte("OK\n"))
-	// })
-
 	go func() {
 		srv.Serve(lis)
 	}()
@@ -197,209 +168,4 @@ func startAPI(ctx context.Context, wg *sync.WaitGroup, config manager.Config, pr
 		srv.GracefulStop()
 		log.Debug().Msg("API stopped")
 	}()
-}
-
-// func getSimulatedDates(fileRepo manager.FileRepository) []func() time.Time {
-// 	return []func() time.Time{
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test-3.tar.gz", Size: 450, Date: time.Date(2018, 11, 28, 5, 0, 0, 0, time.Local)})
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test-2.tar.gz", Size: 450, Date: time.Date(2018, 11, 29, 5, 0, 0, 0, time.Local)})
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test-1.tar.gz", Size: 450, Date: time.Date(2018, 11, 30, 5, 0, 0, 0, time.Local)})
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test1.tar.gz", Size: 450, Date: time.Date(2018, 12, 1, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 1, 8, 0, 0, 0, time.Local)
-// 		},
-// 		// func() time.Time {
-// 		// 	return time.Date(2018, 12, 1, 12, 0, 0, 0, time.Local)
-// 		// },
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 1, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test2.tar.gz", Size: 450, Date: time.Date(2018, 12, 2, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 2, 8, 0, 0, 0, time.Local)
-// 		},
-// 		// func() time.Time {
-// 		// 	return time.Date(2018, 12, 2, 12, 0, 0, 0, time.Local)
-// 		// },
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 2, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test3.tar.gz", Size: 450, Date: time.Date(2018, 12, 3, 5, 0, 0, 0, time.Local)})
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "truite/truite1.tar.gz", Size: 1000, Date: time.Date(2018, 12, 3, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 3, 8, 0, 0, 0, time.Local)
-// 		},
-// 		// func() time.Time {
-// 		// 	return time.Date(2018, 12, 3, 12, 0, 0, 0, time.Local)
-// 		// },
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 3, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test4.tar.gz", Size: 450, Date: time.Date(2018, 12, 4, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 4, 8, 0, 0, 0, time.Local)
-// 		},
-// 		// func() time.Time {
-// 		// 	return time.Date(2018, 12, 4, 12, 0, 0, 0, time.Local)
-// 		// },
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 4, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test4.tar.gz", Size: 450, Date: time.Date(2018, 12, 4, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 5, 8, 0, 0, 0, time.Local)
-// 		},
-// 		// func() time.Time {
-// 		// 	return time.Date(2018, 12, 5, 12, 0, 0, 0, time.Local)
-// 		// },
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 5, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test4.tar.gz", Size: 450, Date: time.Date(2018, 12, 6, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 6, 8, 0, 0, 0, time.Local)
-// 		},
-// 		// func() time.Time {
-// 		// 	return time.Date(2018, 12, 6, 12, 0, 0, 0, time.Local)
-// 		// },
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 6, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test5.tar.gz", Size: 150, Date: time.Date(2018, 12, 7, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 7, 8, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 7, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test6.tar.gz", Size: 450, Date: time.Date(2018, 12, 8, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 8, 8, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 8, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test7.tar.gz", Size: 450, Date: time.Date(2018, 12, 9, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 9, 8, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test8.tar.gz", Size: 460, Date: time.Date(2018, 12, 10, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 10, 8, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test9.tar.gz", Size: 450, Date: time.Date(2018, 12, 11, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 11, 8, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test10.tar.gz", Size: 450, Date: time.Date(2018, 12, 12, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 12, 8, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			return time.Date(2018, 12, 15, 20, 0, 0, 0, time.Local)
-// 		},
-// 		func() time.Time {
-// 			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test11.tar.gz", Size: 450, Date: time.Date(2018, 12, 16, 5, 0, 0, 0, time.Local)})
-// 			return time.Date(2018, 12, 16, 8, 0, 0, 0, time.Local)
-// 		},
-// 	}
-// }
-
-func getSimulatedDates(fileRepo manager.FileRepository) []func() time.Time {
-	return []func() time.Time{
-		func() time.Time {
-			return time.Date(2018, 12, 1, 8, 0, 0, 0, time.Local)
-		},
-		// func() time.Time {
-		// 	return time.Date(2018, 12, 1, 12, 0, 0, 0, time.Local)
-		// },
-		func() time.Time {
-			return time.Date(2018, 12, 1, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			return time.Date(2018, 12, 2, 8, 0, 0, 0, time.Local)
-		},
-		// func() time.Time {
-		// 	return time.Date(2018, 12, 2, 12, 0, 0, 0, time.Local)
-		// },
-		func() time.Time {
-			return time.Date(2018, 12, 2, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			return time.Date(2018, 12, 3, 8, 0, 0, 0, time.Local)
-		},
-		// func() time.Time {
-		// 	return time.Date(2018, 12, 3, 12, 0, 0, 0, time.Local)
-		// },
-		func() time.Time {
-			return time.Date(2018, 12, 3, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test4.tar.gz", Size: 450, Date: time.Date(2018, 12, 4, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 4, 8, 0, 0, 0, time.Local)
-		},
-		// func() time.Time {
-		// 	return time.Date(2018, 12, 4, 12, 0, 0, 0, time.Local)
-		// },
-		func() time.Time {
-			return time.Date(2018, 12, 4, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test4.tar.gz", Size: 450, Date: time.Date(2018, 12, 4, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 5, 8, 0, 0, 0, time.Local)
-		},
-		// func() time.Time {
-		// 	return time.Date(2018, 12, 5, 12, 0, 0, 0, time.Local)
-		// },
-		func() time.Time {
-			return time.Date(2018, 12, 5, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test4.tar.gz", Size: 450, Date: time.Date(2018, 12, 6, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 6, 8, 0, 0, 0, time.Local)
-		},
-		// func() time.Time {
-		// 	return time.Date(2018, 12, 6, 12, 0, 0, 0, time.Local)
-		// },
-		func() time.Time {
-			return time.Date(2018, 12, 6, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test5.tar.gz", Size: 150, Date: time.Date(2018, 12, 7, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 7, 8, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			return time.Date(2018, 12, 7, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test6.tar.gz", Size: 450, Date: time.Date(2018, 12, 8, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 8, 8, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			return time.Date(2018, 12, 8, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test7.tar.gz", Size: 450, Date: time.Date(2018, 12, 9, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 9, 8, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test8.tar.gz", Size: 460, Date: time.Date(2018, 12, 10, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 10, 8, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test9.tar.gz", Size: 450, Date: time.Date(2018, 12, 11, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 11, 8, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test10.tar.gz", Size: 450, Date: time.Date(2018, 12, 12, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 12, 8, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			return time.Date(2018, 12, 15, 20, 0, 0, 0, time.Local)
-		},
-		func() time.Time {
-			// inmem.CreateFakeFile(fileRepo, manager.File{Path: "fera/test11.tar.gz", Size: 450, Date: time.Date(2018, 12, 16, 5, 0, 0, 0, time.Local)})
-			return time.Date(2018, 12, 16, 8, 0, 0, 0, time.Local)
-		},
-	}
 }
