@@ -144,14 +144,14 @@ func startAPI(ctx context.Context, wg *sync.WaitGroup, config manager.Config, pr
 
 	wg.Add(1)
 
-	addr := "127.0.0.1:3000"
+	addr := fmt.Sprintf("%s:%s", config.API.ListenIP, config.API.ListenPort)
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal().Str("addr", addr).Err(err).Msg("grpc: failed to listen on addr")
 	}
 
-	backrSrv := api.NewServer(projectRepo, fileRepo, accountRepo, config.Auth)
+	backrSrv := api.NewServer(projectRepo, fileRepo, accountRepo, config.API)
 	srv := grpc.NewServer()
 	proto.RegisterBackrApiServer(srv, backrSrv)
 

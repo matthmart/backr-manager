@@ -12,7 +12,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func NewServer(projectRepo manager.ProjectRepository, fileRepo manager.FileRepository, accountRepo manager.AccountRepository, authConfig manager.AuthConfig) proto.BackrApiServer {
+func NewServer(projectRepo manager.ProjectRepository, fileRepo manager.FileRepository, accountRepo manager.AccountRepository, authConfig manager.APIConfig) proto.BackrApiServer {
 	srv := server{
 		ProjectRepo: projectRepo,
 		FileRepo:    fileRepo,
@@ -26,7 +26,7 @@ type server struct {
 	ProjectRepo manager.ProjectRepository
 	FileRepo    manager.FileRepository
 	AccountRepo manager.AccountRepository
-	Config      manager.AuthConfig
+	Config      manager.APIConfig
 }
 
 func (srv *server) GetProjects(ctx context.Context, req *proto.GetProjectsRequest) (*proto.ProjectsListResponse, error) {

@@ -4,7 +4,7 @@ package manager
 type Config struct {
 	S3   S3Config
 	Bolt BoltConfig
-	Auth AuthConfig
+	API  APIConfig
 }
 
 // S3Config stores S3-like API configuration
@@ -21,6 +21,9 @@ type BoltConfig struct {
 	Filepath string
 }
 
-type AuthConfig struct {
-	JWTSecret string
+// APIConfig stores settings to configure the API
+type APIConfig struct {
+	ListenIP   string
+	ListenPort string
+	JWTSecret  string
 }

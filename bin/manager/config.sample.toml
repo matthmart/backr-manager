@@ -8,5 +8,7 @@ use_tls =  false
 [bolt]
 filepath = "bolt.db"
 
-[auth]
+[api]
+listen_ip = "127.0.0.1"
+listen_port = "3000"
 jwt_secret = "a_very_secure_key"
