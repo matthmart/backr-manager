@@ -13,6 +13,9 @@ Backr Manager is a tool created to manage backup files stored into an object sto
 - [How to use](#how-to-use)
   - [Start the server](#start-the-server)
   - [Configuration](#configuration)
+- [Building](#building)
+- [Readmap](#roadmap)
+- [License](#license)
 
 ## Presentation
 
@@ -155,6 +158,20 @@ When you need to download a file, you can use this command:
 ```
 $ backrctl file url project1/file12.tar.gz
 <a very long URL>
+```
+
+# Building
+
+To build binaries, you can use the Makefile.
+
+```
+$ make build
+```
+
+To cross-compile the binaries:
+
+```
+$ make build_all
 ```
 
 # Roadmap
