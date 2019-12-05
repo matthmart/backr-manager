@@ -142,7 +142,7 @@ type processTest struct {
 	ProjectRepository manager.ProjectRepository
 	FileRepository    manager.FileRepository
 	Notifier          *testNotifier
-	Expected          func() (map[string]manager.ProjectState, []manager.File, []manager.Alert)
+	Expected          func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement)
 }
 
 func getProcessTestCases() []processTest {
@@ -185,7 +185,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext := time.Date(2019, 03, 26, 7, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
@@ -202,9 +202,8 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{files[7], files[6], files[1]}
-					expectedSentAlerts := []manager.Alert{}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, nil
 				},
 			}
 		}(),
@@ -231,7 +230,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext := time.Date(2019, 03, 26, 8, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
@@ -243,9 +242,8 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{files[0]}
-					expectedSentAlerts := []manager.Alert{}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, nil
 				},
 			}
 		}(),
@@ -292,7 +290,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext1 := time.Date(2019, 03, 26, 7, 0, 0, 0, time.UTC)
 					expectedNext2 := time.Date(2019, 04, 9, 7, 0, 0, 0, time.UTC)
@@ -317,9 +315,8 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{files[7], files[6], files[1]}
-					expectedSentAlerts := []manager.Alert{}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, nil
 				},
 			}
 		}(),
@@ -364,7 +361,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext := time.Date(2019, 03, 26, 6, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
@@ -385,14 +382,12 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{files[8], files[7], files[6], files[1]}
-					expectedSentAlerts := []manager.Alert{
-						manager.Alert{
-							Level: manager.Warning,
-							Title: "Backup issue",
-						},
+					expectedErrorStatement := &manager.ProjectErrorStatement{
+						MaxLevel: manager.Warning,
+						Count:    2,
 					}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, expectedErrorStatement
 				},
 			}
 		}(),
@@ -447,7 +442,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext := time.Date(2019, 03, 27, 7, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
@@ -465,14 +460,12 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{files[9], files[7], files[6], files[8]}
-					expectedSentAlerts := []manager.Alert{
-						manager.Alert{
-							Level: manager.Warning,
-							Title: "Backup issue",
-						},
+					expectedErrorStatement := &manager.ProjectErrorStatement{
+						MaxLevel: manager.Warning,
+						Count:    1,
 					}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, expectedErrorStatement
 				},
 			}
 		}(),
@@ -521,7 +514,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					// files are obsolete, so the Next date should not be updated by the date of an old file
 					// so the current Next date should remain the same
@@ -540,14 +533,12 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{files[7], files[6], files[5]}
-					expectedSentAlerts := []manager.Alert{
-						manager.Alert{
-							Level: manager.Critic,
-							Title: "Backup issue",
-						},
+					expectedErrorStatement := &manager.ProjectErrorStatement{
+						MaxLevel: manager.Critic,
+						Count:    3,
 					}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, expectedErrorStatement
 				},
 			}
 		}(),
@@ -590,7 +581,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext := time.Date(2019, 03, 31, 7, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
@@ -607,14 +598,12 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{files[3], files[2], files[1]}
-					expectedSentAlerts := []manager.Alert{
-						manager.Alert{
-							Level: manager.Warning,
-							Title: "Backup issue",
-						},
+					expectedErrorStatement := &manager.ProjectErrorStatement{
+						MaxLevel: manager.Warning,
+						Count:    2,
 					}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, expectedErrorStatement
 				},
 			}
 		}(),
@@ -647,7 +636,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext := initialNext
 					expectedState[rule.GetID()] = manager.RuleState{
@@ -660,14 +649,12 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{}
-					expectedSentAlerts := []manager.Alert{
-						manager.Alert{
-							Level: manager.Critic,
-							Title: "Backup issue",
-						},
+					expectedErrorStatement := &manager.ProjectErrorStatement{
+						MaxLevel: manager.Critic,
+						Count:    1,
 					}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, expectedErrorStatement
 				},
 			}
 		}(),
@@ -703,7 +690,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext := time.Date(2019, 03, 26, 7, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
@@ -718,9 +705,8 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := []manager.File{files[0]}
-					expectedSentAlerts := []manager.Alert{}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, nil
 				},
 			}
 		}(),
@@ -748,7 +734,7 @@ func getProcessTestCases() []processTest {
 				ProjectRepository: newMockProjectRepository(projects),
 				FileRepository:    newMockFileRepository(files),
 				Notifier:          newTestNotifier(),
-				Expected: func() (map[string]manager.ProjectState, []manager.File, []manager.Alert) {
+				Expected: func() (map[string]manager.ProjectState, []manager.File, *manager.ProjectErrorStatement) {
 					expectedState := manager.ProjectState{}
 					expectedNext := time.Date(2019, 03, 26, 8, 0, 0, 0, time.UTC)
 					expectedState[rule.GetID()] = manager.RuleState{
@@ -760,9 +746,8 @@ func getProcessTestCases() []processTest {
 						"project1": expectedState,
 					}
 					expectedFilesInRepo := files
-					expectedSentAlerts := []manager.Alert{}
 
-					return statesByProjectName, expectedFilesInRepo, expectedSentAlerts
+					return statesByProjectName, expectedFilesInRepo, nil
 				},
 			}
 		}(),
@@ -789,33 +774,37 @@ func newMockFileRepository(files []manager.File) manager.FileRepository {
 
 func newTestNotifier() *testNotifier {
 	n := testNotifier{
-		sentNotifications: []manager.Alert{},
+		sentNotifications: []manager.ProjectErrorStatement{},
 	}
 	return &n
 }
 
 type testNotifier struct {
-	sentNotifications []manager.Alert
+	sentNotifications []manager.ProjectErrorStatement
 }
 
-func (not *testNotifier) Send(alert manager.Alert) {
-	not.sentNotifications = append(not.sentNotifications, alert)
+func (not *testNotifier) Notify(stmt manager.ProjectErrorStatement) error {
+	not.sentNotifications = append(not.sentNotifications, stmt)
+	return nil
 }
 
-func (not *testNotifier) checkSentNotifications(t *testing.T, expectedSentNotifications []manager.Alert) {
+func (not *testNotifier) checkSentNotifications(t *testing.T, expectedErrorStatement *manager.ProjectErrorStatement) {
 
-	if len(not.sentNotifications) != len(expectedSentNotifications) {
-		t.Fatalf("unexpected alerts count: expected=%d got=%d", len(expectedSentNotifications), len(not.sentNotifications))
+	if expectedErrorStatement != nil && len(not.sentNotifications) != 1 {
+		t.Fatalf("unexpected alert count: expected=1 got=%d", len(not.sentNotifications))
 	}
 
-	for i, alert := range not.sentNotifications {
-		expectedAlert := expectedSentNotifications[i]
+	if expectedErrorStatement == nil {
+		return
+	}
 
-		if alert.Level != expectedAlert.Level {
-			t.Errorf("unexpected alert level: expected=%v got=%v", expectedAlert.Level, alert.Level)
-		}
-		if alert.Title != expectedAlert.Title {
-			t.Errorf("unexpected alert title: expected=%v got=%v", expectedAlert.Title, alert.Title)
-		}
+	stmt := not.sentNotifications[0]
+	expectedStmt := *expectedErrorStatement
+
+	if stmt.MaxLevel != expectedStmt.MaxLevel {
+		t.Errorf("unexpected error statement max level: expected=%v got=%v", expectedStmt.MaxLevel, stmt.MaxLevel)
+	}
+	if stmt.Count != expectedStmt.Count {
+		t.Errorf("unexpected error statement count: expected=%v got=%v", expectedStmt.Count, stmt.Count)
 	}
 }

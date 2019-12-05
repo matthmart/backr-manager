@@ -2,15 +2,15 @@ package manager
 
 // Notifier defines methods required to notify alerts
 type Notifier interface {
-	Send(alert Alert)
+	Notify(statement ProjectErrorStatement) error
 }
 
-// Alert stores notification data
-type Alert struct {
-	Title    string
-	Message  string
-	Level    AlertLevel
-	Metadata interface{}
+// ProjectErrorStatement stores global error state for a project
+type ProjectErrorStatement struct {
+	Project  Project
+	Count    int
+	Reasons  map[RuleStateErrorType]bool
+	MaxLevel AlertLevel
 }
 
 // AlertLevel represents a level of alert

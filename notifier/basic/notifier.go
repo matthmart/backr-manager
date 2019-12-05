@@ -15,21 +15,21 @@ func NewNotifier() manager.Notifier {
 type basicNotifier struct {
 }
 
-func (n *basicNotifier) Send(alert manager.Alert) {
+func (n *basicNotifier) Notify(stmt manager.ProjectErrorStatement) error {
 	fmt.Println("")
 
-	switch alert.Level {
+	switch stmt.MaxLevel {
 	case manager.Warning:
 		fmt.Println("*** ⚠️  WARNING ***")
 	case manager.Critic:
 		fmt.Println("*** 🆘  CRITICAL ***")
 	}
 
-	fmt.Printf("→ %s\n", alert.Title)
-	fmt.Println(alert.Message)
-	j, _ := json.Marshal(alert.Metadata)
+	fmt.Printf("→ %s\n", stmt.Project.Name)
+	j, _ := json.Marshal(stmt.Reasons)
 	fmt.Println(string(j))
 	fmt.Println("——————————————————————")
 	fmt.Println("")
 
+	return nil
 }

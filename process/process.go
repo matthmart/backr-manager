@@ -83,18 +83,14 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) er
 				reasonsLabels = append(reasonsLabels, reason.String())
 			}
 
-			alert := manager.Alert{
-				Title:   "Backup issue",
-				Level:   projectErr.Level,
-				Message: fmt.Sprintf("The project has %d error(s).", projectErr.Count),
-				Metadata: map[string]interface{}{
-					"project": project.Name,
-					"count":   projectErr.Count,
-					"reasons": reasonsLabels,
-				},
+			stmt := manager.ProjectErrorStatement{
+				Project:  project,
+				Count:    projectErr.Count,
+				Reasons:  projectErr.Reasons,
+				MaxLevel: projectErr.Level,
 			}
 
-			notifier.Send(alert)
+			notifier.Notify(stmt)
 		}
 
 	}
