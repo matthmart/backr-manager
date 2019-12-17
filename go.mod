@@ -1,6 +1,6 @@
 module github.com/agence-webup/backr/manager
 
-go 1.12
+go 1.13
 
 require (
 	github.com/chzyer/logex v1.1.10 // indirect

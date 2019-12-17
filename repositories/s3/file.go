@@ -15,7 +15,7 @@ import (
 
 // NewFileRepository returns an implementation of FileRepository using an S3 object storage
 func NewFileRepository(config manager.S3Config) (manager.FileRepository, error) {
-	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseTLS)
+	minioClient, err := minio.NewWithRegion(config.Endpoint, config.AccessKey, config.SecretKey, config.UseTLS, config.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +46,10 @@ func (repo *fileRepository) GetAll() ([]manager.File, error) {
 
 	files := []manager.File{}
 	for object := range repo.minioClient.ListObjectsV2(repo.bucket, "", recursive, doneCh) {
+		if object.Err != nil {
+			return files, fmt.Errorf("unable to list S3 objects: %w", object.Err)
+		}
+
 		f := manager.File{
 			Path: object.Key,
 			Date: object.LastModified,

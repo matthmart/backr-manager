@@ -13,6 +13,7 @@ type S3Config struct {
 	Endpoint  string
 	AccessKey string
 	SecretKey string
+	Region    string
 	UseTLS    bool
 }
 

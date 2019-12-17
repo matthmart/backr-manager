@@ -20,6 +20,7 @@ func SetupFromViper() {
 			Endpoint:  viper.GetString("s3.endpoint"),
 			AccessKey: viper.GetString("s3.access_key"),
 			SecretKey: viper.GetString("s3.secret_key"),
+			Region:    viper.GetString("s3.region"),
 			UseTLS:    viper.GetBool("s3.use_tls"),
 		},
 		Bolt: manager.BoltConfig{

@@ -106,10 +106,24 @@ func (srv *server) CreateProject(ctx context.Context, req *proto.CreateProjectRe
 		rules = append(rules, rule)
 	}
 
+	// setup the state if the project must be processed immediately
+	state := manager.ProjectState{}
+	if req.ProcessImmediately {
+		now := time.Now()
+		for _, r := range rules {
+			state[r.GetID()] = manager.RuleState{
+				Rule:  r,
+				Next:  &now,
+				Files: []manager.SelectedFile{},
+			}
+		}
+	}
+
 	project := manager.Project{
 		Name:      req.Name,
 		Rules:     rules,
 		CreatedAt: time.Now(),
+		State:     state,
 	}
 
 	srv.ProjectRepo.Save(project)

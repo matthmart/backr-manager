@@ -44,6 +44,7 @@ message ProjectsListResponse {
 message CreateProjectRequest {
     string name = 1;
     repeated Rule rules = 2;
+    bool process_immediately = 3;
 }
 message CreateProjectResponse {
     Project project = 1;

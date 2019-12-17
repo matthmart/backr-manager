@@ -3,6 +3,7 @@ bucket =  "backr"
 endpoint =  "localhost:9001"
 access_key =  "backr-test"
 secret_key =  "backr-test"
+region = ""
 use_tls =  false
 
 [bolt]
