@@ -13,12 +13,16 @@ import (
 var notificationBucket = []byte("notifications")
 
 // NewNotifier returns a notifier maintaining its state using bolt
-func NewNotifier(db *bolt.DB) manager.Notifier {
-	return &notifier{}
+func NewNotifier(db *bolt.DB, webhookURL string) manager.Notifier {
+	return &notifier{
+		db:         db,
+		webhookURL: webhookURL,
+	}
 }
 
 type notifier struct {
-	db *bolt.DB
+	db         *bolt.DB
+	webhookURL string
 }
 
 type notification struct {
@@ -39,7 +43,7 @@ func (n *notifier) Notify(statement manager.ProjectErrorStatement) error {
 	if existingNotification != nil {
 		// there is no issue remaining on this project, notify that everything is ok
 		if statement.Count == 0 && existingNotification.Statement.Count > 0 {
-
+			sendSlackMessage(n.webhookURL, statement)
 		}
 
 		trigger := existingNotification.CreatedAt.Add(delayBetweenSending * time.Duration(existingNotification.SentCount))
@@ -49,19 +53,8 @@ func (n *notifier) Notify(statement manager.ProjectErrorStatement) error {
 		}
 	}
 
-	switch statement.MaxLevel {
-	case manager.Warning:
-		fmt.Println("*** ⚠️  WARNING ***")
-	case manager.Critic:
-		fmt.Println("*** 🆘  CRITICAL ***")
-	}
-
-	// fmt.Printf("→ %s\n", alert.Title)
-	// fmt.Println(alert.Message)
-	// j, _ := json.Marshal(alert.Metadata)
-	// fmt.Println(string(j))
-	// fmt.Println("——————————————————————")
-	// fmt.Println("")
+	// notify for issue
+	sendSlackMessage(n.webhookURL, statement)
 
 	return nil
 }

@@ -22,3 +22,15 @@ const (
 	// Critic is a level sent when the issue requires an action
 	Critic
 )
+
+func (a *AlertLevel) String() string {
+	if a != nil {
+		switch *a {
+		case Critic:
+			return "critic"
+		case Warning:
+			return "warning"
+		}
+	}
+	return "ok"
+}

@@ -1,67 +1,141 @@
 package stateful
 
-import "github.com/agence-webup/backr/manager"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"time"
 
-func getSlackPayload(alert string, project manager.Project) payload {
-	title := "Backup issue"
-	att := []attachment{
-		attachment{
-			Title: &title,
-			Fields: []*field{
-				&field{Title: "Project", Value: project.Name},
-			},
-		},
-	}
+	"github.com/agence-webup/backr/manager"
+)
 
-	return payload{
-		Attachments: att,
-	}
+/*
+{
+    "attachments": [
+        {
+            "fallback": "Required plain-text summary of the attachment.",
+            "color": "warning",
+            "title": "CPU/Load issue",
+            "fields": [
+                {
+                    "title": "Server",
+                    "value": "q-demos2",
+                    "short": true
+                },
+				{
+                    "title": "IP",
+                    "value": "23.53.154.12",
+                    "short": true
+                },
+				{
+                    "title": "Level",
+                    "value": "Warning",
+                    "short": true
+                }
+            ],
+            "ts": 123456789
+        }
+    ]
+}
+*/
+
+type slackPayload struct {
+	Attachments []slackPayloadAttachment `json:"attachments"`
 }
 
-type field struct {
+type slackPayloadAttachment struct {
+	Fallback string                        `json:"fallback"`
+	Color    string                        `json:"color"`
+	Title    string                        `json:"title"`
+	Fields   []slackPayloadAttachmentField `json:"fields"`
+}
+
+type slackPayloadAttachmentField struct {
 	Title string `json:"title"`
 	Value string `json:"value"`
 	Short bool   `json:"short"`
 }
 
-type action struct {
-	Type  string `json:"type"`
-	Text  string `json:"text"`
-	Url   string `json:"url"`
-	Style string `json:"style"`
+func sendSlackMessage(webhookURL string, stmt manager.ProjectErrorStatement) error {
+
+	// check if a webhook URL is set
+	if webhookURL == "" {
+		return fmt.Errorf("webhook URL is not set")
+	}
+
+	// prepare payload
+	payload := getPayload(stmt)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("cannot marshal payload into json: %w", err)
+	}
+
+	// prepare the request
+	b := bytes.NewBuffer(data)
+	req, err := http.NewRequest("POST", webhookURL, b)
+	if err != nil {
+		return fmt.Errorf("cannot prepare request: %w", err)
+	}
+
+	client := http.Client{
+		Timeout: time.Duration(5) * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error with request to slack API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("cannot read response body: %w", err)
+		}
+		return fmt.Errorf("error with Slack webhook: %v", string(body))
+	}
+
+	return nil
 }
 
-type attachment struct {
-	Fallback     *string   `json:"fallback"`
-	Color        *string   `json:"color"`
-	PreText      *string   `json:"pretext"`
-	AuthorName   *string   `json:"author_name"`
-	AuthorLink   *string   `json:"author_link"`
-	AuthorIcon   *string   `json:"author_icon"`
-	Title        *string   `json:"title"`
-	TitleLink    *string   `json:"title_link"`
-	Text         *string   `json:"text"`
-	ImageUrl     *string   `json:"image_url"`
-	Fields       []*field  `json:"fields"`
-	Footer       *string   `json:"footer"`
-	FooterIcon   *string   `json:"footer_icon"`
-	Timestamp    *int64    `json:"ts"`
-	MarkdownIn   *[]string `json:"mrkdwn_in"`
-	Actions      []*action `json:"actions"`
-	CallbackID   *string   `json:"callback_id"`
-	ThumbnailUrl *string   `json:"thumb_url"`
+func getPayload(stmt manager.ProjectErrorStatement) slackPayload {
+	title := ""
+	var level *manager.AlertLevel
+	if stmt.Count > 0 {
+		title = "Backup issue"
+		level = &stmt.MaxLevel
+	} else {
+		title = "Backup OK"
+	}
+
+	return slackPayload{
+		Attachments: []slackPayloadAttachment{
+			slackPayloadAttachment{
+				Title:    title,
+				Color:    getSlackColorForLevel(level),
+				Fallback: fmt.Sprintf("%v: %s on '%v'", level, title, stmt.Project.Name),
+				Fields: []slackPayloadAttachmentField{
+					slackPayloadAttachmentField{
+						Title: "Project",
+						Value: stmt.Project.Name,
+						Short: true,
+					},
+				},
+			},
+		},
+	}
 }
 
-type payload struct {
-	Parse       string       `json:"parse,omitempty"`
-	Username    string       `json:"username,omitempty"`
-	IconUrl     string       `json:"icon_url,omitempty"`
-	IconEmoji   string       `json:"icon_emoji,omitempty"`
-	Channel     string       `json:"channel,omitempty"`
-	Text        string       `json:"text,omitempty"`
-	LinkNames   string       `json:"link_names,omitempty"`
-	Attachments []attachment `json:"attachments,omitempty"`
-	UnfurlLinks bool         `json:"unfurl_links,omitempty"`
-	UnfurlMedia bool         `json:"unfurl_media,omitempty"`
-	Markdown    bool         `json:"mrkdwn,omitempty"`
+func getSlackColorForLevel(level *manager.AlertLevel) string {
+	if level != nil {
+		switch *level {
+		case manager.Critic:
+			return "danger"
+		case manager.Warning:
+			return "warning"
+		}
+	}
+	return "good"
 }
