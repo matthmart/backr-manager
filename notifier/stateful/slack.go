@@ -58,7 +58,7 @@ type slackPayloadAttachmentField struct {
 	Short bool   `json:"short"`
 }
 
-func sendSlackMessage(webhookURL string, stmt manager.ProjectErrorStatement) error {
+func sendSlackMessage(webhookURL string, notif notification) error {
 
 	// check if a webhook URL is set
 	if webhookURL == "" {
@@ -66,7 +66,7 @@ func sendSlackMessage(webhookURL string, stmt manager.ProjectErrorStatement) err
 	}
 
 	// prepare payload
-	payload := getPayload(stmt)
+	payload := getPayload(notif)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("cannot marshal payload into json: %w", err)
@@ -100,27 +100,34 @@ func sendSlackMessage(webhookURL string, stmt manager.ProjectErrorStatement) err
 	return nil
 }
 
-func getPayload(stmt manager.ProjectErrorStatement) slackPayload {
-	title := ""
-	var level *manager.AlertLevel
-	if stmt.Count > 0 {
-		title = "Backup issue"
-		level = &stmt.MaxLevel
-	} else {
-		title = "Backup OK"
+func getPayload(notif notification) slackPayload {
+
+	reason := ""
+	for r, desc := range notif.Statement.Reasons {
+		reason += fmt.Sprintf(" - %v: %v\n", r.String(), desc)
 	}
 
 	return slackPayload{
 		Attachments: []slackPayloadAttachment{
 			slackPayloadAttachment{
-				Title:    title,
-				Color:    getSlackColorForLevel(level),
-				Fallback: fmt.Sprintf("%v: %s on '%v'", level, title, stmt.Project.Name),
+				Title:    "Backup issue",
+				Color:    getSlackColorForLevel(&notif.Statement.MaxLevel),
+				Fallback: fmt.Sprintf("%v: %s on '%v'", notif.Statement.MaxLevel, "Backup issue", notif.Statement.Project.Name),
 				Fields: []slackPayloadAttachmentField{
 					slackPayloadAttachmentField{
 						Title: "Project",
-						Value: stmt.Project.Name,
+						Value: notif.Statement.Project.Name,
 						Short: true,
+					},
+					slackPayloadAttachmentField{
+						Title: "Created at",
+						Value: notif.CreatedAt.UTC().Format(time.RFC822),
+						Short: true,
+					},
+					slackPayloadAttachmentField{
+						Title: "Reasons",
+						Value: reason,
+						Short: false,
 					},
 				},
 			},

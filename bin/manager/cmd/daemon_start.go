@@ -32,7 +32,7 @@ import (
 
 	"github.com/agence-webup/backr/manager"
 
-	"github.com/agence-webup/backr/manager/notifier/basic"
+	"github.com/agence-webup/backr/manager/notifier/stateful"
 	"github.com/agence-webup/backr/manager/process"
 	"github.com/agence-webup/backr/manager/repositories/bolt"
 	"github.com/agence-webup/backr/manager/repositories/s3"
@@ -61,7 +61,7 @@ var startCmd = &cobra.Command{
 		defer db.Close()
 
 		// prepare tools & repositories
-		notifier := basic.NewNotifier()
+		notifier := stateful.NewNotifier(db, config.SlackNotifier)
 		projectRepo := bolt.NewProjectRepository(db)
 		accountRepo := bolt.NewAccountRepository(db)
 		fileRepo, err := s3.NewFileRepository(config.S3)

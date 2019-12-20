@@ -13,3 +13,6 @@ filepath = "bolt.db"
 listen_ip = "127.0.0.1"
 listen_port = "3000"
 jwt_secret = "a_very_secure_key"
+
+[slack]
+webhook_url = ""

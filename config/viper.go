@@ -31,6 +31,9 @@ func SetupFromViper() {
 			ListenPort: viper.GetString("api.listen_port"),
 			JWTSecret:  viper.GetString("api.jwt_secret"),
 		},
+		SlackNotifier: manager.SlackNotifierConfig{
+			WebhookURL: viper.GetString("slack.webhook_url"),
+		},
 	}
 
 	config = c
