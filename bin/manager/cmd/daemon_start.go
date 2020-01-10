@@ -108,7 +108,7 @@ func startProcess(ctx context.Context, wg *sync.WaitGroup, projectRepo manager.P
 		defer wg.Done()
 
 		// prepare ticker
-		tick := time.NewTicker(10 * time.Second)
+		tick := time.NewTicker(1 * time.Minute)
 
 		for {
 			select {
