@@ -2,9 +2,10 @@ package manager
 
 // Config stores configuration used by the manager
 type Config struct {
-	S3   S3Config
-	Bolt BoltConfig
-	API  APIConfig
+	S3            S3Config
+	Bolt          BoltConfig
+	API           APIConfig
+	SlackNotifier SlackNotifierConfig
 }
 
 // S3Config stores S3-like API configuration
@@ -27,4 +28,9 @@ type APIConfig struct {
 	ListenIP   string
 	ListenPort string
 	JWTSecret  string
+}
+
+// SlackNotifierConfig stores settings to configure Slack notifier
+type SlackNotifierConfig struct {
+	WebhookURL string
 }

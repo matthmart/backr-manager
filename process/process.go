@@ -41,20 +41,20 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) er
 
 	type projectError struct {
 		Count   int
-		Reasons map[manager.RuleStateErrorType]bool
+		Reasons map[manager.RuleStateErrorType]string
 		Level   manager.AlertLevel
 	}
 
 	for _, project := range projects {
 
-		projectErr := projectError{Reasons: map[manager.RuleStateErrorType]bool{}}
+		projectErr := projectError{Reasons: map[manager.RuleStateErrorType]string{}}
 
 		for _, ruleState := range project.State {
 
 			// check for a global error
 			if ruleState.Error != nil {
 				projectErr.Count++
-				projectErr.Reasons[ruleState.Error.Reason] = true
+				projectErr.Reasons[ruleState.Error.Reason] = ""
 				projectErr.Level = manager.Critic
 			}
 
@@ -64,7 +64,7 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) er
 			for i, f := range files {
 				if f.Error != nil {
 					projectErr.Count++
-					projectErr.Reasons[f.Error.Reason] = true
+					projectErr.Reasons[f.Error.Reason] = fmt.Sprintf("%v (expire %v)", f.Path, f.Expiration.UTC().Format(time.RFC822))
 					if i == 0 {
 						firstErr = f.Error
 					}
@@ -78,23 +78,14 @@ func Notify(projectRepo manager.ProjectRepository, notifier manager.Notifier) er
 		}
 
 		if projectErr.Count > 0 {
-			reasonsLabels := []string{}
-			for reason := range projectErr.Reasons {
-				reasonsLabels = append(reasonsLabels, reason.String())
+			stmt := manager.ProjectErrorStatement{
+				Project:  project,
+				Count:    projectErr.Count,
+				Reasons:  projectErr.Reasons,
+				MaxLevel: projectErr.Level,
 			}
 
-			alert := manager.Alert{
-				Title:   "Backup issue",
-				Level:   projectErr.Level,
-				Message: fmt.Sprintf("The project has %d error(s).", projectErr.Count),
-				Metadata: map[string]interface{}{
-					"project": project.Name,
-					"count":   projectErr.Count,
-					"reasons": reasonsLabels,
-				},
-			}
-
-			notifier.Send(alert)
+			notifier.Notify(stmt)
 		}
 
 	}
