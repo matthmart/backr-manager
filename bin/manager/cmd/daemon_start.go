@@ -53,6 +53,13 @@ var startCmd = &cobra.Command{
 		config := config.Get()
 
 		// open a Bolt DB
+		if _, err := os.Stat(config.Bolt.Filepath); os.IsNotExist(err) {
+			_, err := os.Create(config.Bolt.Filepath)
+			if err != nil {
+				fmt.Printf("unable to create BoltDB file: %v\n", err.Error())
+				os.Exit(1)
+			}
+		}
 		db, err := bbolt.Open(config.Bolt.Filepath, 0666, &bbolt.Options{Timeout: 1 * time.Second})
 		if err != nil {
 			fmt.Printf("unable to open BoltDB file: %v\n", err.Error())
