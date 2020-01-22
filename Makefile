@@ -13,7 +13,7 @@ K := $(foreach exec,$(EXECUTABLES),\
 
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-VERSION=0.1
+VERSION=1.0-beta1
 BUILD=`git rev-parse HEAD`
 PLATFORMS=darwin linux
 ARCHITECTURES=amd64
@@ -21,7 +21,7 @@ ARCHITECTURES=amd64
 MANAGER_BINARY=backr-manager
 MANAGER_PACKAGE=github.com/agence-webup/backr/manager/bin/manager
 # Setup linker flags option for build that interoperate with variable names in src code
-MANAGER_LDFLAGS=-ldflags "-X ${MANAGER_PACKAGE}/cmd.version=${VERSION} -X ${MANAGER_PACKAGE}/cmd.build=${BUILD}"
+MANAGER_LDFLAGS=-ldflags "-s -w -X ${MANAGER_PACKAGE}/cmd.version=${VERSION} -X ${MANAGER_PACKAGE}/cmd.build=${BUILD}"
 
 default: build
 
